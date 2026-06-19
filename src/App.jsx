@@ -17,11 +17,22 @@ import About from "./components/About.jsx";
 import Contact from "./components/Contact.jsx";
 import Wishlist from "./components/Wishlist.jsx";
 import ScrollToTop from "./components/ui/ScrollToTop.jsx";
+import WhatsAppButton from "./components/ui/WhatsAppButton.jsx";
 
+import InstagramGallery from "./components/InstagramGallery.jsx";
+import Login from "./components/Login.jsx";
+import Register from "./components/Register.jsx";
+import Checkout from "./components/Checkout.jsx";
+import OrderTracking from "./components/OrderTracking.jsx";
+import FAQ from "./components/FAQ.jsx";
+import Blog from "./components/Blog.jsx";
+import TestimonialsPage from "./components/TestimonialsPage.jsx";
+import NotFound from "./components/NotFound.jsx";
 export default function App() {
   return (
-    <div className="min-h-screen bg-obsidian font-body text-ivory">
+    <div className="min-h-screen font-body transition-colors duration-300">
       <ScrollToTop />
+      <WhatsAppButton />
       <Navbar />
       <main>
         <Routes>
@@ -36,6 +47,7 @@ export default function App() {
                 <Brands />
                 <Offers />
                 <Newsletter />
+                <InstagramGallery />
               </>
             }
           />
@@ -47,6 +59,15 @@ export default function App() {
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/track-order" element={<OrderTracking />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:id" element={<Blog />} />
+          <Route path="/testimonials" element={<TestimonialsPage />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
       <Footer />

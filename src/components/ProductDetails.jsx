@@ -5,6 +5,7 @@ import { products } from "../data/products.js";
 import BottleIllustration from "./ui/BottleIllustration.jsx";
 import ProductCard from "./ui/ProductCard.jsx";
 import StarRating from "./ui/StarRating.jsx";
+import RelatedProducts from "./RelatedProducts.jsx";
 
 // Extended product information mapping to keep data files clean and supply rich details.
 const PRODUCT_INFO_EXTENSIONS = {
@@ -595,17 +596,7 @@ export default function ProductDetails() {
 
       {/* Related Products ("Complete the Ritual") */}
       {relatedProducts.length > 0 && (
-        <div className="border-t border-obsidian-border pt-16 mb-20">
-          <div className="mb-8 text-center sm:text-left">
-            <h2 className="font-display text-2xl text-ivory">Complete the Ritual</h2>
-            <p className="text-sm text-smoke mt-1">Recommended products that elevate this formula.</p>
-          </div>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {relatedProducts.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        </div>
+        <RelatedProducts />
       )}
 
       {/* Reviews list */}

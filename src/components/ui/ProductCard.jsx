@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, ShoppingBag, Check } from "lucide-react";
+import { Heart, ShoppingBag, Check, Eye } from "lucide-react";
 import BottleIllustration from "./BottleIllustration.jsx";
 import StarRating from "./StarRating.jsx";
+import QuickViewModal from "./QuickViewModal.jsx";
 
 const badgeStyles = {
   Bestseller: "bg-gold/15 text-gold border-gold/30",
@@ -18,6 +19,7 @@ export default function ProductCard({ product }) {
 
   const [saved, setSaved] = useState(false);
   const [added, setAdded] = useState(false);
+  const [showQuickView, setShowQuickView] = useState(false);
 
   useEffect(() => {
     const checkSaved = () => {
@@ -132,6 +134,17 @@ export default function ProductCard({ product }) {
             className={saved ? "fill-rose text-rose animate-pulse" : "text-ivory/70"}
           />
         </button>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowQuickView(true);
+          }}
+          aria-label="Quick view"
+          className="absolute right-3 top-14 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-obsidian/70 backdrop-blur transition-colors hover:bg-obsidian opacity-0 group-hover:opacity-100"
+        >
+          <Eye size={15} className="text-ivory/70 hover:text-gold" />
+        </button>
       </div>
 
       <h3 className="font-display text-lg text-ivory">{name}</h3>
@@ -172,6 +185,16 @@ export default function ProductCard({ product }) {
           )}
         </button>
       </div>
+
+      {showQuickView && (
+        <QuickViewModal 
+          product={{...product, image: `https://images.unsplash.com/photo-1631214499505-87bd3be5e7e6?auto=format&fit=crop&q=80&w=800`}} 
+          onClose={(e) => {
+            if (e) e.stopPropagation();
+            setShowQuickView(false);
+          }} 
+        />
+      )}
     </div>
   );
 }

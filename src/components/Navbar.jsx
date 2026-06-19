@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, Search, ShoppingBag, User, X, Heart } from "lucide-react";
+import { Menu, Search, ShoppingBag, User, X, Heart, Moon, Sun } from "lucide-react";
 import ShadeSwatch from "./ui/ShadeSwatch.jsx";
+import { useTheme } from "../contexts/ThemeContext.jsx";
 
 const links = [
   { label: "Shop All", href: "/collections" },
@@ -19,6 +20,9 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [cartCount, setCartCount] = useState(2);
   const [wishlistCount, setWishlistCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const { isDarkMode, toggleTheme } = useTheme();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -104,12 +108,33 @@ export default function Navbar() {
 
         <div className="hidden items-center gap-5 lg:flex">
           <button
-            onClick={() => navigate("/collections")}
-            aria-label="Search"
+            onClick={toggleTheme}
+            aria-label="Toggle Dark Mode"
             className="text-ivory/80 transition-colors hover:text-gold"
           >
-            <Search size={19} />
+            {isDarkMode ? <Sun size={19} /> : <Moon size={19} />}
           </button>
+          
+          <div className="relative flex items-center">
+            <button
+              onClick={() => setShowSearch(!showSearch)}
+              aria-label="Search"
+              className="text-ivory/80 transition-colors hover:text-gold z-10 relative"
+            >
+              <Search size={19} />
+            </button>
+            <div className={`absolute right-0 top-1/2 -translate-y-1/2 transition-all duration-300 ${showSearch ? 'opacity-100 translate-x-0 w-64' : 'opacity-0 translate-x-4 w-0 pointer-events-none'}`}>
+              <form onSubmit={(e) => { e.preventDefault(); navigate(`/collections?search=${searchQuery}`); setShowSearch(false); }}>
+                <input 
+                  type="text" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search products..." 
+                  className="w-full bg-obsidian-soft border border-obsidian-border rounded-full py-2 pl-4 pr-10 text-sm text-ivory focus:outline-none focus:border-gold"
+                />
+              </form>
+            </div>
+          </div>
           <button
             onClick={() => navigate("/profile")}
             aria-label="Account"
@@ -167,7 +192,14 @@ export default function Navbar() {
               </li>
             ))}
           </ul>
-          <div className="mt-6 flex items-center gap-6 border-t border-obsidian-border pt-6">
+          <div className="mt-6 flex items-center justify-between border-t border-obsidian-border pt-6">
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle Dark Mode"
+              className="text-ivory/80 hover:text-gold"
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
             <button
               onClick={() => {
                 setOpen(false);

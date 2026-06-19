@@ -6,13 +6,42 @@ html {
   scroll-behavior: smooth;
 }
 
+@layer base {
+  :root {
+    --color-obsidian: #ffffff;
+    --color-obsidian-light: #fafafa;
+    --color-obsidian-soft: #f4f4f5;
+    --color-obsidian-border: #e4e4e7;
+    --color-ivory: #18181b;
+    --color-smoke: #71717a;
+    
+    --color-gold: #C9A769;
+    --color-gold-light: #E2C893;
+    --color-gold-dark: #9C7F4C;
+  }
+  
+  .dark {
+    --color-obsidian: #0E0B10;
+    --color-obsidian-light: #171219;
+    --color-obsidian-soft: #1F1922;
+    --color-obsidian-border: #2A222F;
+    --color-ivory: #F3ECE2;
+    --color-smoke: #A99CAE;
+    
+    --color-gold: #C9A769;
+    --color-gold-light: #E2C893;
+    --color-gold-dark: #9C7F4C;
+  }
+}
+
 body {
-  background-color: #0e0b10;
+  background-color: var(--color-obsidian);
+  color: var(--color-ivory);
 }
 
 ::selection {
-  background-color: #c9a769;
-  color: #0e0b10;
+  background-color: var(--color-gold);
+  color: var(--color-obsidian);
 }
 
 /* Slim, on-brand scrollbar */

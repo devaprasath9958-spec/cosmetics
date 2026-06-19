@@ -1,21 +1,22 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{js,jsx}"],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
         obsidian: {
-          DEFAULT: "#0E0B10",
-          light: "#171219",
-          soft: "#1F1922",
-          border: "#2A222F",
+          DEFAULT: "var(--color-obsidian)",
+          light: "var(--color-obsidian-light)",
+          soft: "var(--color-obsidian-soft)",
+          border: "var(--color-obsidian-border)",
         },
-        ivory: "#F3ECE2",
-        smoke: "#A99CAE",
+        ivory: "var(--color-ivory)",
+        smoke: "var(--color-smoke)",
         gold: {
-          DEFAULT: "#C9A769",
-          light: "#E2C893",
-          dark: "#9C7F4C",
+          DEFAULT: "var(--color-gold)",
+          light: "var(--color-gold-light)",
+          dark: "var(--color-gold-dark)",
         },
         rose: {
           DEFAULT: "#D98C9B",
