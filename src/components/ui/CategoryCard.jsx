@@ -1,11 +1,16 @@
+import { useNavigate } from "react-router-dom";
 import * as Icons from "lucide-react";
 
 export default function CategoryCard({ category }) {
   const { name, count, icon, swatches } = category;
   const Icon = Icons[icon] ?? Icons.Sparkles;
+  const navigate = useNavigate();
 
   return (
-    <button className="group flex flex-col items-start rounded-2xl border border-obsidian-border bg-obsidian-light/60 p-6 text-left transition-all duration-300 hover:-translate-y-1 hover:border-gold/40 hover:shadow-card">
+    <button
+      onClick={() => navigate(`/collections?category=${encodeURIComponent(name)}`)}
+      className="group flex flex-col items-start rounded-2xl border border-obsidian-border bg-obsidian-light/60 p-6 text-left transition-all duration-300 hover:-translate-y-1 hover:border-gold/40 hover:shadow-card"
+    >
       <div className="relative mb-5 flex h-14 w-14 items-center justify-center">
         {swatches.map((color, i) => (
           <span
