@@ -1,4 +1,6 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
+import { AdminAuthProvider } from "./contexts/AdminAuthContext.jsx";
+import { AdminDataProvider } from "./contexts/AdminDataContext.jsx";
 import Navbar from "./components/Navbar.jsx";
 import Hero from "./components/Hero.jsx";
 import Categories from "./components/Categories.jsx";
@@ -18,7 +20,6 @@ import Contact from "./components/Contact.jsx";
 import Wishlist from "./components/Wishlist.jsx";
 import ScrollToTop from "./components/ui/ScrollToTop.jsx";
 import WhatsAppButton from "./components/ui/WhatsAppButton.jsx";
-
 import InstagramGallery from "./components/InstagramGallery.jsx";
 import Login from "./components/Login.jsx";
 import Register from "./components/Register.jsx";
@@ -28,50 +29,97 @@ import FAQ from "./components/FAQ.jsx";
 import Blog from "./components/Blog.jsx";
 import TestimonialsPage from "./components/TestimonialsPage.jsx";
 import NotFound from "./components/NotFound.jsx";
-export default function App() {
+import CustomBeauty from "./components/CustomBeauty.jsx";
+import AdminLogin from "./components/admin/AdminLogin.jsx";
+import AdminLayout from "./components/admin/AdminLayout.jsx";
+import ProtectedAdminRoute from "./components/admin/ProtectedAdminRoute.jsx";
+import AdminDashboard from "./components/admin/AdminDashboard.jsx";
+import AdminProducts from "./components/admin/AdminProducts.jsx";
+import AdminOrders from "./components/admin/AdminOrders.jsx";
+import AdminCustomers from "./components/admin/AdminCustomers.jsx";
+import AdminReviews from "./components/admin/AdminReviews.jsx";
+
+function StorefrontShell({ children }) {
   return (
-    <div className="min-h-screen font-body transition-colors duration-300">
-      <ScrollToTop />
-      <WhatsAppButton />
+    <>
       <Navbar />
-      <main>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <>
-                <Hero />
-                <Categories />
-                <Products />
-                <Reviews />
-                <Brands />
-                <Offers />
-                <Newsletter />
-                <InstagramGallery />
-              </>
-            }
-          />
-          <Route path="/collections" element={<Collections />} />
-          <Route path="/product/:id" element={<ProductDetails />} />
-          <Route path="/orders" element={<Orders />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/wishlist" element={<Wishlist />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/track-order" element={<OrderTracking />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/blog/:id" element={<Blog />} />
-          <Route path="/testimonials" element={<TestimonialsPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </main>
+      <main>{children}</main>
       <Footer />
-    </div>
+    </>
   );
 }
 
+function AppRoutes() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith("/admin");
+
+  return (
+    <>
+      <ScrollToTop />
+      {!isAdminRoute && <WhatsAppButton />}
+      <Routes>
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedAdminRoute>
+              <AdminLayout />
+            </ProtectedAdminRoute>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="products" element={<AdminProducts />} />
+          <Route path="orders" element={<AdminOrders />} />
+          <Route path="customers" element={<AdminCustomers />} />
+          <Route path="reviews" element={<AdminReviews />} />
+        </Route>
+
+        <Route
+          path="/"
+          element={
+            <StorefrontShell>
+              <Hero />
+              <Categories />
+              <Products />
+              <Reviews />
+              <Brands />
+              <Offers />
+              <Newsletter />
+              <InstagramGallery />
+            </StorefrontShell>
+          }
+        />
+        <Route path="/collections" element={<StorefrontShell><Collections /></StorefrontShell>} />
+        <Route path="/custom-beauty" element={<StorefrontShell><CustomBeauty /></StorefrontShell>} />
+        <Route path="/product/:id" element={<StorefrontShell><ProductDetails /></StorefrontShell>} />
+        <Route path="/orders" element={<StorefrontShell><Orders /></StorefrontShell>} />
+        <Route path="/cart" element={<StorefrontShell><Cart /></StorefrontShell>} />
+        <Route path="/profile" element={<StorefrontShell><Profile /></StorefrontShell>} />
+        <Route path="/about" element={<StorefrontShell><About /></StorefrontShell>} />
+        <Route path="/contact" element={<StorefrontShell><Contact /></StorefrontShell>} />
+        <Route path="/wishlist" element={<StorefrontShell><Wishlist /></StorefrontShell>} />
+        <Route path="/login" element={<StorefrontShell><Login /></StorefrontShell>} />
+        <Route path="/register" element={<StorefrontShell><Register /></StorefrontShell>} />
+        <Route path="/checkout" element={<StorefrontShell><Checkout /></StorefrontShell>} />
+        <Route path="/track-order" element={<StorefrontShell><OrderTracking /></StorefrontShell>} />
+        <Route path="/faq" element={<StorefrontShell><FAQ /></StorefrontShell>} />
+        <Route path="/blog" element={<StorefrontShell><Blog /></StorefrontShell>} />
+        <Route path="/blog/:id" element={<StorefrontShell><Blog /></StorefrontShell>} />
+        <Route path="/testimonials" element={<StorefrontShell><TestimonialsPage /></StorefrontShell>} />
+        <Route path="*" element={<StorefrontShell><NotFound /></StorefrontShell>} />
+      </Routes>
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <AdminAuthProvider>
+      <AdminDataProvider>
+        <div className="min-h-screen font-body transition-colors duration-300">
+          <AppRoutes />
+        </div>
+      </AdminDataProvider>
+    </AdminAuthProvider>
+  );
+}

@@ -9,6 +9,7 @@ const links = [
   { label: "Skincare", href: "/collections?category=Skincare" },
   { label: "Makeup", href: "/collections?category=Makeup" },
   { label: "Fragrance", href: "/collections?category=Fragrance" },
+  { label: "Custom Beauty", href: "/custom-beauty" },
   { label: "Haircare", href: "/collections?category=Hair%20Care" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
@@ -18,7 +19,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
-  const [cartCount, setCartCount] = useState(2);
+  const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
@@ -39,10 +40,10 @@ export default function Navbar() {
           const totalQty = parsed.reduce((sum, item) => sum + item.qty, 0);
           setCartCount(totalQty);
         } else {
-          setCartCount(2);
+          setCartCount(0);
         }
       } catch (e) {
-        setCartCount(2);
+        setCartCount(0);
       }
     };
     updateCartCount();
@@ -124,7 +125,7 @@ export default function Navbar() {
               <Search size={19} />
             </button>
             <div className={`absolute right-0 top-1/2 -translate-y-1/2 transition-all duration-300 ${showSearch ? 'opacity-100 translate-x-0 w-64' : 'opacity-0 translate-x-4 w-0 pointer-events-none'}`}>
-              <form onSubmit={(e) => { e.preventDefault(); navigate(`/collections?search=${searchQuery}`); setShowSearch(false); }}>
+              <form onSubmit={(e) => { e.preventDefault(); navigate(`/collections?search=${encodeURIComponent(searchQuery.trim())}`); setShowSearch(false); }}>
                 <input 
                   type="text" 
                   value={searchQuery}

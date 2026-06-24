@@ -74,6 +74,9 @@ export default function Wishlist() {
       localStorage.setItem("lume-cart", JSON.stringify(cart));
       window.dispatchEvent(new Event("cart-updated"));
 
+      // Remove the item from the wishlist after moving it to cart.
+      handleRemove(item.id);
+
       // Set button success state temporarily
       setAddedItems((prev) => ({ ...prev, [item.id]: true }));
       setTimeout(() => {

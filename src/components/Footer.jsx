@@ -16,9 +16,9 @@ const columns = [
     title: "Help",
     links: [
       { label: "Shipping & Returns", href: "/contact" },
-      { label: "FAQs", href: "/contact" },
+      { label: "FAQs", href: "/faq" },
       { label: "Contact Us", href: "/contact" },
-      { label: "Track Order", href: "/orders" },
+      { label: "Track Order", href: "/track-order" },
     ],
   },
   {
@@ -28,6 +28,7 @@ const columns = [
       { label: "Sustainability", href: "/about" },
       { label: "Careers", href: "/about" },
       { label: "Press", href: "/about" },
+      { label: "Admin Portal", href: "/admin/login" },
     ],
   },
 ];

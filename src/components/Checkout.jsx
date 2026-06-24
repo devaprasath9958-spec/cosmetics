@@ -1,5 +1,5 @@
 import React from "react";
-import { CreditCard, Truck, ShieldCheck, MapPin } from "lucide-react";
+import { CreditCard, Truck, ShieldCheck, MapPin, Lock } from "lucide-react";
 
 export default function Checkout() {
   return (

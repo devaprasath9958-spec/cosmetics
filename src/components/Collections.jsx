@@ -46,9 +46,37 @@ const FEATURED_COLLECTIONS = [
 export default function Collections() {
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryParam = searchParams.get("category");
+  const searchQuery = searchParams.get("search") ?? "";
+
+  const updateSearchParam = (query) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        const trimmed = query.trim();
+        if (trimmed) {
+          next.set("search", trimmed);
+        } else {
+          next.delete("search");
+        }
+        return next;
+      },
+      { replace: true }
+    );
+  };
+
+  const updateCategoryParam = (category) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (category === "All") {
+        next.delete("category");
+      } else {
+        next.set("category", category);
+      }
+      return next;
+    });
+  };
 
   // State Management
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedBadges, setSelectedBadges] = useState([]);
   const [priceFilter, setPriceFilter] = useState("All"); // "All", "under-30", "30-60", "over-60"
@@ -86,7 +114,6 @@ export default function Collections() {
       }
       setSelectedBadges(collection.badges);
       setPriceFilter("All"); // Custom range will be evaluated in the hook
-      setSearchQuery("");
       // Clear query params when a collection is selected to avoid conflicts
       setSearchParams({});
     }
@@ -105,7 +132,6 @@ export default function Collections() {
     setSelectedCategory("All");
     setSelectedBadges([]);
     setPriceFilter("All");
-    setSearchQuery("");
     setSortBy("default");
     setSelectedCollection(null);
     setSearchParams({});
@@ -253,14 +279,14 @@ export default function Collections() {
                 value={searchQuery}
                 onChange={(e) => {
                   setSelectedCollection(null);
-                  setSearchQuery(e.target.value);
+                  updateSearchParam(e.target.value);
                 }}
                 className="w-full rounded-full border border-obsidian-border bg-obsidian/40 px-4 py-2.5 pl-10 text-sm text-ivory placeholder-smoke/60 outline-none transition-colors focus:border-gold/50"
               />
               <Search size={16} className="absolute left-3.5 top-3.5 text-smoke/70" />
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery("")}
+                  onClick={() => updateSearchParam("")}
                   className="absolute right-3.5 top-3.5 text-smoke/70 hover:text-ivory"
                 >
                   <X size={15} />
@@ -279,11 +305,7 @@ export default function Collections() {
                     key={cat}
                     onClick={() => {
                       setSelectedCollection(null);
-                      if (cat === "All") {
-                        setSearchParams({});
-                      } else {
-                        setSearchParams({ category: cat });
-                      }
+                      updateCategoryParam(cat);
                     }}
                     className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
                       selectedCategory === cat
@@ -394,7 +416,7 @@ export default function Collections() {
                       Category: {selectedCategory === "Hair Care" ? "Haircare" : selectedCategory === "Fragrance" ? "Fragrances" : selectedCategory}
                       <button onClick={() => {
                         setSelectedCategory("All");
-                        setSearchParams({});
+                        updateCategoryParam("All");
                       }} className="hover:text-ivory">
                         <X size={12} />
                       </button>
@@ -403,7 +425,7 @@ export default function Collections() {
                   {searchQuery && (
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-obsidian-border bg-obsidian-light/60 px-2.5 py-0.5 text-xs text-smoke">
                       Query: "{searchQuery}"
-                      <button onClick={() => setSearchQuery("")} className="hover:text-ivory">
+                      <button onClick={() => updateSearchParam("")} className="hover:text-ivory">
                         <X size={12} />
                       </button>
                     </span>
@@ -478,14 +500,14 @@ export default function Collections() {
               value={searchQuery}
               onChange={(e) => {
                 setSelectedCollection(null);
-                setSearchQuery(e.target.value);
+                updateSearchParam(e.target.value);
               }}
               className="w-full rounded-full border border-obsidian-border bg-obsidian-light/40 px-4 py-2.5 pl-10 text-sm text-ivory placeholder-smoke/60 outline-none"
             />
             <Search size={16} className="absolute left-3.5 top-3.5 text-smoke/70" />
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery("")}
+                onClick={() => updateSearchParam("")}
                 className="absolute right-3.5 top-3.5 text-smoke/70 hover:text-ivory"
               >
                 <X size={15} />
@@ -550,11 +572,7 @@ export default function Collections() {
                         key={cat}
                         onClick={() => {
                           setSelectedCollection(null);
-                          if (cat === "All") {
-                            setSearchParams({});
-                          } else {
-                            setSearchParams({ category: cat });
-                          }
+                          updateCategoryParam(cat);
                         }}
                         className={`rounded-full px-3.5 py-1.5 text-xs transition-all ${
                           isSelected

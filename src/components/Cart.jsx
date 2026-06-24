@@ -3,28 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, HelpCircle, Check, CreditCard, Sparkles, Receipt, Percent, X } from "lucide-react";
 import BottleIllustration from "./ui/BottleIllustration.jsx";
 
-const DEFAULT_CART = [
-  {
-    id: "p1",
-    name: "Dew Drop Serum",
-    subtitle: "Hyaluronic + Vitamin C",
-    price: 58,
-    qty: 1,
-    bottle: "bottle",
-    colors: ["#C9A769", "#8B3A4B"],
-    selectedShadeIndex: 0
-  },
-  {
-    id: "p2",
-    name: "Velvet Matte Lipstick",
-    subtitle: "Shade — Café Nude",
-    price: 26,
-    qty: 1,
-    bottle: "tube",
-    colors: ["#8B3A4B", "#D98C9B"],
-    selectedShadeIndex: 1
-  }
-];
+const DEFAULT_CART = [];
 
 export default function Cart() {
   const navigate = useNavigate();
@@ -45,12 +24,12 @@ export default function Cart() {
       if (stored) {
         setCartItems(JSON.parse(stored));
       } else {
-        localStorage.setItem("lume-cart", JSON.stringify(DEFAULT_CART));
-        setCartItems(DEFAULT_CART);
+        localStorage.setItem("lume-cart", JSON.stringify([]));
+        setCartItems([]);
         window.dispatchEvent(new Event("cart-updated"));
       }
     } catch (e) {
-      setCartItems(DEFAULT_CART);
+      setCartItems([]);
     }
   }, []);
 

@@ -138,6 +138,11 @@ const DEFAULT_REVIEWS = [
 export default function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  const product = useMemo(() => {
+    return products.find((p) => p.id === id) || products[0];
+  }, [id]);
+
   const [activeTab, setActiveTab] = useState("description"); // "description", "apply", "ingredients"
   const [activeGalleryView, setActiveGalleryView] = useState("bottle"); // "bottle", "swatch", "box"
   const [quantity, setQuantity] = useState(1);
@@ -186,11 +191,6 @@ export default function ProductDetails() {
   };
   const [isAdding, setIsAdding] = useState(false);
   const [addedSuccess, setAddedSuccess] = useState(false);
-
-  // Find target product
-  const product = useMemo(() => {
-    return products.find((p) => p.id === id) || products[0];
-  }, [id]);
 
   // Color selection (Shade selector)
   const [selectedShadeIndex, setSelectedShadeIndex] = useState(0);
