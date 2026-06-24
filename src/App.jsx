@@ -3,8 +3,11 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import { supabase } from "./supabaseClient.js";
 import { AdminAuthProvider } from "./contexts/AdminAuthContext.jsx";
 import { AdminDataProvider } from "./contexts/AdminDataContext.jsx";
+import { ReactLenis } from "@studio-freight/react-lenis";
+import { AnimatePresence } from "framer-motion";
 import Navbar from "./components/Navbar.jsx";
 import Hero from "./components/Hero.jsx";
+import Trending from "./components/Trending.jsx";
 import Categories from "./components/Categories.jsx";
 import Products from "./components/Products.jsx";
 import Reviews from "./components/Reviews.jsx";
@@ -40,6 +43,7 @@ import AdminProducts from "./components/admin/AdminProducts.jsx";
 import AdminOrders from "./components/admin/AdminOrders.jsx";
 import AdminCustomers from "./components/admin/AdminCustomers.jsx";
 import AdminReviews from "./components/admin/AdminReviews.jsx";
+import CustomCursor from "./components/CustomCursor.jsx";
 
 function StorefrontShell({ children }) {
   return (
@@ -59,57 +63,61 @@ function AppRoutes() {
     <>
       <ScrollToTop />
       {!isAdminRoute && <WhatsAppButton />}
-      <Routes>
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route
-          path="/admin"
-          element={
-            <ProtectedAdminRoute>
-              <AdminLayout />
-            </ProtectedAdminRoute>
-          }
-        >
-          <Route index element={<AdminDashboard />} />
-          <Route path="products" element={<AdminProducts />} />
-          <Route path="orders" element={<AdminOrders />} />
-          <Route path="customers" element={<AdminCustomers />} />
-          <Route path="reviews" element={<AdminReviews />} />
-        </Route>
+      {!isAdminRoute && <CustomCursor />}
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedAdminRoute>
+                <AdminLayout />
+              </ProtectedAdminRoute>
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="products" element={<AdminProducts />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="customers" element={<AdminCustomers />} />
+            <Route path="reviews" element={<AdminReviews />} />
+          </Route>
 
-        <Route
-          path="/"
-          element={
-            <StorefrontShell>
-              <Hero />
-              <Categories />
-              <Products />
-              <Reviews />
-              <Brands />
-              <Offers />
-              <Newsletter />
-              <InstagramGallery />
-            </StorefrontShell>
-          }
-        />
-        <Route path="/collections" element={<StorefrontShell><Collections /></StorefrontShell>} />
-        <Route path="/custom-beauty" element={<StorefrontShell><CustomBeauty /></StorefrontShell>} />
-        <Route path="/product/:id" element={<StorefrontShell><ProductDetails /></StorefrontShell>} />
-        <Route path="/orders" element={<StorefrontShell><Orders /></StorefrontShell>} />
-        <Route path="/cart" element={<StorefrontShell><Cart /></StorefrontShell>} />
-        <Route path="/profile" element={<StorefrontShell><Profile /></StorefrontShell>} />
-        <Route path="/about" element={<StorefrontShell><About /></StorefrontShell>} />
-        <Route path="/contact" element={<StorefrontShell><Contact /></StorefrontShell>} />
-        <Route path="/wishlist" element={<StorefrontShell><Wishlist /></StorefrontShell>} />
-        <Route path="/login" element={<StorefrontShell><Login /></StorefrontShell>} />
-        <Route path="/register" element={<StorefrontShell><Register /></StorefrontShell>} />
-        <Route path="/checkout" element={<StorefrontShell><Checkout /></StorefrontShell>} />
-        <Route path="/track-order" element={<StorefrontShell><OrderTracking /></StorefrontShell>} />
-        <Route path="/faq" element={<StorefrontShell><FAQ /></StorefrontShell>} />
-        <Route path="/blog" element={<StorefrontShell><Blog /></StorefrontShell>} />
-        <Route path="/blog/:id" element={<StorefrontShell><Blog /></StorefrontShell>} />
-        <Route path="/testimonials" element={<StorefrontShell><TestimonialsPage /></StorefrontShell>} />
-        <Route path="*" element={<StorefrontShell><NotFound /></StorefrontShell>} />
-      </Routes>
+          <Route
+            path="/"
+            element={
+              <StorefrontShell>
+                <Hero />
+                <Trending />
+                <Categories />
+                <Products />
+                <Reviews />
+                <Brands />
+                <Offers />
+                <Newsletter />
+                <InstagramGallery />
+              </StorefrontShell>
+            }
+          />
+          <Route path="/collections" element={<StorefrontShell><Collections /></StorefrontShell>} />
+          <Route path="/custom-beauty" element={<StorefrontShell><CustomBeauty /></StorefrontShell>} />
+          <Route path="/product/:id" element={<StorefrontShell><ProductDetails /></StorefrontShell>} />
+          <Route path="/orders" element={<StorefrontShell><Orders /></StorefrontShell>} />
+          <Route path="/cart" element={<StorefrontShell><Cart /></StorefrontShell>} />
+          <Route path="/profile" element={<StorefrontShell><Profile /></StorefrontShell>} />
+          <Route path="/about" element={<StorefrontShell><About /></StorefrontShell>} />
+          <Route path="/contact" element={<StorefrontShell><Contact /></StorefrontShell>} />
+          <Route path="/wishlist" element={<StorefrontShell><Wishlist /></StorefrontShell>} />
+          <Route path="/login" element={<StorefrontShell><Login /></StorefrontShell>} />
+          <Route path="/register" element={<StorefrontShell><Register /></StorefrontShell>} />
+          <Route path="/checkout" element={<StorefrontShell><Checkout /></StorefrontShell>} />
+          <Route path="/track-order" element={<StorefrontShell><OrderTracking /></StorefrontShell>} />
+          <Route path="/faq" element={<StorefrontShell><FAQ /></StorefrontShell>} />
+          <Route path="/blog" element={<StorefrontShell><Blog /></StorefrontShell>} />
+          <Route path="/blog/:id" element={<StorefrontShell><Blog /></StorefrontShell>} />
+          <Route path="/testimonials" element={<StorefrontShell><TestimonialsPage /></StorefrontShell>} />
+          <Route path="*" element={<StorefrontShell><NotFound /></StorefrontShell>} />
+        </Routes>
+      </AnimatePresence>
     </>
   );
 }
@@ -128,12 +136,14 @@ export default function App() {
   }, []);
 
   return (
-    <AdminAuthProvider>
-      <AdminDataProvider>
-        <div className="min-h-screen font-body transition-colors duration-300">
-          <AppRoutes />
-        </div>
-      </AdminDataProvider>
-    </AdminAuthProvider>
+    <ReactLenis root>
+      <AdminAuthProvider>
+        <AdminDataProvider>
+          <div className="min-h-screen font-body transition-colors duration-300">
+            <AppRoutes />
+          </div>
+        </AdminDataProvider>
+      </AdminAuthProvider>
+    </ReactLenis>
   );
 }

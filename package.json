@@ -11,6 +11,8 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "@studio-freight/lenis": "^1.0.42",
+    "@studio-freight/react-lenis": "^0.0.47",
     "@supabase/supabase-js": "^2.108.2",
     "framer-motion": "^12.41.0",
     "lucide-react": "^0.383.0",
