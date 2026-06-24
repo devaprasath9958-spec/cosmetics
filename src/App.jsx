@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
+import { supabase } from "./supabaseClient.js";
 import { AdminAuthProvider } from "./contexts/AdminAuthContext.jsx";
 import { AdminDataProvider } from "./contexts/AdminDataContext.jsx";
 import Navbar from "./components/Navbar.jsx";
@@ -113,6 +115,18 @@ function AppRoutes() {
 }
 
 export default function App() {
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const { data, error } = await supabase.from('products').select('*');
+      if (error) {
+        console.error('Error fetching products:', error);
+      } else {
+        console.log('Products data:', data);
+      }
+    };
+    fetchProducts();
+  }, []);
+
   return (
     <AdminAuthProvider>
       <AdminDataProvider>

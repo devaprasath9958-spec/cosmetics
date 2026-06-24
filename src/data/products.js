@@ -59,6 +59,7 @@ export const products = [
     badge: "Bestseller",
     bottle: "bottle",
     colors: ["#C9A769", "#8B3A4B"],
+    image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80",
   },
   {
     id: "p2",
@@ -72,6 +73,7 @@ export const products = [
     badge: "Sale",
     bottle: "tube",
     colors: ["#8B3A4B", "#D98C9B"],
+    image: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=800&q=80",
   },
   {
     id: "p3",
@@ -85,6 +87,7 @@ export const products = [
     badge: "New",
     bottle: "bottle",
     colors: ["#E2C893", "#9C7F4C"],
+    image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=800&q=80",
   },
   {
     id: "p4",
@@ -98,6 +101,7 @@ export const products = [
     badge: "Limited",
     bottle: "bottle",
     colors: ["#8B3A4B", "#C9A769"],
+    image: "https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=800&q=80",
   },
   {
     id: "p5",
@@ -111,6 +115,7 @@ export const products = [
     badge: null,
     bottle: "bottle",
     colors: ["#D98C9B", "#E2C893"],
+    image: "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=800&q=80",
   },
   {
     id: "p6",
@@ -124,6 +129,7 @@ export const products = [
     badge: "Bestseller",
     bottle: "jar",
     colors: ["#D98C9B", "#8B3A4B"],
+    image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=800&q=80",
   },
   {
     id: "p7",
@@ -137,6 +143,7 @@ export const products = [
     badge: "Sale",
     bottle: "jar",
     colors: ["#9C7F4C", "#A99CAE"],
+    image: "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?auto=format&fit=crop&w=800&q=80",
   },
   {
     id: "p8",
@@ -150,6 +157,7 @@ export const products = [
     badge: "New",
     bottle: "jar",
     colors: ["#E2C893", "#D98C9B"],
+    image: "https://images.unsplash.com/photo-1616683693504-3ea7e9ad6fec?auto=format&fit=crop&w=800&q=80",
   },
 ];
 

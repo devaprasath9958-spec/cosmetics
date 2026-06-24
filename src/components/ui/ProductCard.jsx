@@ -109,12 +109,20 @@ export default function ProductCard({ product }) {
     >
       <div className="relative mb-5 flex h-48 items-center justify-center overflow-hidden rounded-xl bg-obsidian-soft">
         <div className="absolute h-32 w-32 rounded-full bg-radial-fade blur-2xl" />
-        <BottleIllustration
-          variant={bottle}
-          from={colors[0]}
-          to={colors[1]}
-          className="relative z-10 h-36 w-auto drop-shadow-xl transition-transform duration-500 group-hover:scale-105"
-        />
+        {product.image ? (
+          <img
+            src={product.image}
+            alt={name}
+            className="relative z-10 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <BottleIllustration
+            variant={bottle}
+            from={colors[0]}
+            to={colors[1]}
+            className="relative z-10 h-36 w-auto drop-shadow-xl transition-transform duration-500 group-hover:scale-105"
+          />
+        )}
 
         {badge && (
           <span
@@ -188,7 +196,7 @@ export default function ProductCard({ product }) {
 
       {showQuickView && (
         <QuickViewModal 
-          product={{...product, image: `https://images.unsplash.com/photo-1631214499505-87bd3be5e7e6?auto=format&fit=crop&q=80&w=800`}} 
+          product={{...product, image: product.image || `https://images.unsplash.com/photo-1631214499505-87bd3be5e7e6?auto=format&fit=crop&q=80&w=800`}} 
           onClose={(e) => {
             if (e) e.stopPropagation();
             setShowQuickView(false);
