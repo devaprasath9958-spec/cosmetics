@@ -496,9 +496,9 @@ export default function Collections() {
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-obsidian-soft border border-obsidian-border text-gold/60 mb-4">
                 <HelpCircle size={22} />
               </div>
-              <h3 className="font-display text-xl text-ivory">No rituals found</h3>
+              <h3 className="font-display text-xl text-ivory">This product is currently unavailable.</h3>
               <p className="mt-2 text-sm text-smoke max-w-sm">
-                We couldn't find any products matching your specific filters. Try loosening your keywords or reset all filters.
+                We couldn't find any products matching your search. Try loosening your keywords or reset all filters.
               </p>
               <button
                 onClick={resetFilters}

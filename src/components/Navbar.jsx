@@ -26,6 +26,7 @@ export default function Navbar() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const { isDarkMode, toggleTheme } = useTheme();
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export default function Navbar() {
     if (!searchQuery.trim()) {
       setSearchResults([]);
       setIsSearching(false);
+      setSelectedIndex(-1);
       return;
     }
 
@@ -58,10 +60,42 @@ export default function Navbar() {
       const results = await searchProducts(searchQuery);
       setSearchResults(results);
       setIsSearching(false);
+      setSelectedIndex(-1);
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    if (selectedIndex >= 0 && searchResults[selectedIndex]) {
+      navigate(`/product/${searchResults[selectedIndex].id}`);
+    } else {
+      const exactMatches = searchResults.filter(p => p.name.toLowerCase() === searchQuery.trim().toLowerCase());
+      if (exactMatches.length === 1) {
+        navigate(`/product/${exactMatches[0].id}`);
+      } else if (searchResults.length === 1) {
+        navigate(`/product/${searchResults[0].id}`);
+      } else {
+        navigate(`/collections?search=${encodeURIComponent(searchQuery.trim())}`);
+      }
+    }
+    setShowSearch(false);
+  };
+
+  const handleKeyDown = (e) => {
+    if (!showSearch || !searchResults.length) return;
+    
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev < searchResults.length - 1 ? prev + 1 : prev));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev > 0 ? prev - 1 : 0));
+    }
+  };
 
   useEffect(() => {
     const updateCartCount = async () => {
@@ -143,11 +177,12 @@ export default function Navbar() {
               <Search size={19} />
             </button>
             <div className={`absolute right-0 top-1/2 -translate-y-1/2 transition-all duration-300 z-10 ${showSearch ? 'opacity-100 translate-x-0 w-80' : 'opacity-0 translate-x-4 w-0 pointer-events-none'}`}>
-              <form onSubmit={(e) => { e.preventDefault(); navigate(`/collections?search=${encodeURIComponent(searchQuery.trim())}`); setShowSearch(false); }}>
+              <form onSubmit={handleSearchSubmit}>
                 <input 
                   type="text" 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
                   placeholder="Search products..." 
                   className="w-full bg-obsidian-soft border border-obsidian-border rounded-full py-2 pl-4 pr-10 text-sm text-ivory focus:outline-none focus:border-gold shadow-lg"
                 />
@@ -160,7 +195,7 @@ export default function Navbar() {
                     <div className="p-4 text-center text-sm text-smoke">Searching...</div>
                   ) : searchResults.length > 0 ? (
                     <div className="max-h-[60vh] overflow-y-auto">
-                      {searchResults.map((product) => (
+                      {searchResults.map((product, index) => (
                         <button
                           key={product.id}
                           onClick={() => {
@@ -168,7 +203,9 @@ export default function Navbar() {
                             setSearchQuery("");
                             navigate(`/product/${product.id}`);
                           }}
-                          className="flex items-center gap-3 w-full p-3 text-left hover:bg-obsidian-soft transition-colors border-b border-obsidian-border/50 last:border-0"
+                          className={`flex items-center gap-3 w-full p-3 text-left transition-colors border-b border-obsidian-border/50 last:border-0 ${
+                            selectedIndex === index ? "bg-obsidian-soft border-l-2 border-l-gold" : "hover:bg-obsidian-soft border-l-2 border-l-transparent"
+                          }`}
                         >
                           <div className="h-12 w-12 rounded-lg bg-obsidian-soft flex-shrink-0 flex items-center justify-center p-1 border border-obsidian-border overflow-hidden">
                             {product.bottle ? (
@@ -197,7 +234,7 @@ export default function Navbar() {
                       </button>
                     </div>
                   ) : (
-                    <div className="p-4 text-center text-sm text-smoke">No products found.</div>
+                    <div className="p-4 text-center text-sm text-smoke">This product is currently unavailable.</div>
                   )}
                 </div>
               )}
