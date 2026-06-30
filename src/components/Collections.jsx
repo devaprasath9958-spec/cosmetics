@@ -11,11 +11,16 @@ export default function Collections() {
 
   useEffect(() => {
     setIsLoading(true);
-    Promise.all([fetchProducts(), fetchCollections()]).then(([p, c]) => {
-      setProducts(p);
-      setFeaturedCollections(c);
-      setIsLoading(false);
-    });
+    const load = () => {
+      Promise.all([fetchProducts(), fetchCollections()]).then(([p, c]) => {
+        setProducts(p);
+        setFeaturedCollections(c);
+        setIsLoading(false);
+      });
+    };
+    load();
+    window.addEventListener("products-updated", load);
+    return () => window.removeEventListener("products-updated", load);
   }, []);
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryParam = searchParams.get("category");

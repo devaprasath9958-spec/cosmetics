@@ -63,11 +63,20 @@ export function AdminDataProvider({ children }) {
 
   useEffect(() => {
     loadData();
+
+    const handleProductsUpdated = async () => {
+      const pData = await fetchProducts();
+      setProducts(pData ?? []);
+    };
+
     window.addEventListener("orders-updated", loadData);
     window.addEventListener("admin-data-updated", loadData);
+    window.addEventListener("products-updated", handleProductsUpdated);
+    
     return () => {
       window.removeEventListener("orders-updated", loadData);
       window.removeEventListener("admin-data-updated", loadData);
+      window.removeEventListener("products-updated", handleProductsUpdated);
     };
   }, [loadData]);
 

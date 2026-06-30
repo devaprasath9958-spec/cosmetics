@@ -28,10 +28,15 @@ export default function Products() {
 
   useEffect(() => {
     setIsLoading(true);
-    fetchProducts().then(p => {
-      setProducts(p);
-      setIsLoading(false);
-    });
+    const load = () => {
+      fetchProducts().then(p => {
+        setProducts(p);
+        setIsLoading(false);
+      });
+    };
+    load();
+    window.addEventListener("products-updated", load);
+    return () => window.removeEventListener("products-updated", load);
   }, []);
 
   const visible =

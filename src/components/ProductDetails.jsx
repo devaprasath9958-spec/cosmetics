@@ -124,11 +124,16 @@ export default function ProductDetails() {
   const [product, setProduct] = useState(null);
 
   useEffect(() => {
-    fetchProducts().then(data => {
-      setProducts(data);
-      const found = data.find((p) => p.id === id);
-      setProduct(found || data[0]);
-    });
+    const load = () => {
+      fetchProducts().then(data => {
+        setProducts(data);
+        const found = data.find((p) => p.id === id);
+        setProduct(found || data[0]);
+      });
+    };
+    load();
+    window.addEventListener("products-updated", load);
+    return () => window.removeEventListener("products-updated", load);
   }, [id]);
 
   const [activeTab, setActiveTab] = useState("description"); // "description", "apply", "ingredients"

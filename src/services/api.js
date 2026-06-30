@@ -123,8 +123,25 @@ export const getAuthenticatedUser = async () => {
 
 // --- Products ---
 let productsCache = null;
-export const fetchProducts = async () => {
-  if (productsCache) return productsCache;
+
+export const clearProductsCache = () => {
+  productsCache = null;
+};
+
+// Set up realtime subscription for products
+if (typeof window !== 'undefined') {
+  supabase
+    .channel('public:products')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) => {
+      productsCache = null;
+      window.dispatchEvent(new Event('products-updated'));
+      window.dispatchEvent(new Event('admin-data-updated')); // Sync admin panel
+    })
+    .subscribe();
+}
+
+export const fetchProducts = async (forceRefresh = false) => {
+  if (productsCache && !forceRefresh) return productsCache;
   try {
     const { data, error } = await supabase.from('products').select('*');
     if (error || !data) return [];
