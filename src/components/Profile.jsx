@@ -193,7 +193,7 @@ export default function Profile() {
       </div>
 
       {/* Profile Welcome Header & Completion */}
-      <div className="relative mb-12 overflow-hidden rounded-3xl border border-obsidian-border bg-obsidian-light/40 p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="relative mb-12 overflow-hidden rounded-3xl border border-obsidian-border bg-obsidian-light p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="absolute right-0 top-0 -z-10 h-72 w-72 rounded-full bg-radial-fade blur-3xl opacity-60" />
         
         <div className="flex flex-col md:flex-row items-center gap-6 w-full">
@@ -319,7 +319,7 @@ export default function Profile() {
                       required
                       value={profileForm.name}
                       onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                      className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-3 text-sm text-ivory outline-none focus:border-gold/40"
+                      className="w-full rounded-xl border border-obsidian-border bg-obsidian-soft px-4 py-3 text-sm text-ivory outline-none focus:border-gold"
                     />
                   </div>
                   <div className="space-y-1">
@@ -328,7 +328,7 @@ export default function Profile() {
                       type="email"
                       disabled
                       value={profileForm.email}
-                      className="w-full rounded-xl border border-obsidian-border bg-obsidian-border/40 px-4 py-3 text-sm text-smoke outline-none cursor-not-allowed"
+                      className="w-full rounded-xl border border-obsidian-border bg-obsidian-soft px-4 py-3 text-sm text-smoke outline-none cursor-not-allowed"
                     />
                   </div>
                   <div className="space-y-3 pb-2">
@@ -351,7 +351,7 @@ export default function Profile() {
                       type="tel"
                       value={profileForm.phone || ""}
                       onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                      className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-3 text-sm text-ivory outline-none focus:border-gold/40"
+                      className="w-full rounded-xl border border-obsidian-border bg-obsidian-soft px-4 py-3 text-sm text-ivory outline-none focus:border-gold"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -361,7 +361,7 @@ export default function Profile() {
                         type="date"
                         value={profileForm.dob || ""}
                         onChange={(e) => setProfileForm({ ...profileForm, dob: e.target.value })}
-                        className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-3 text-sm text-ivory outline-none focus:border-gold/40"
+                        className="w-full rounded-xl border border-obsidian-border bg-obsidian-soft px-4 py-3 text-sm text-ivory outline-none focus:border-gold"
                       />
                     </div>
                     <div className="space-y-1">
@@ -369,7 +369,7 @@ export default function Profile() {
                       <select
                         value={profileForm.gender || ""}
                         onChange={(e) => setProfileForm({ ...profileForm, gender: e.target.value })}
-                        className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-3 text-sm text-ivory outline-none focus:border-gold/40 appearance-none"
+                        className="w-full rounded-xl border border-obsidian-border bg-obsidian-soft px-4 py-3 text-sm text-ivory outline-none focus:border-gold appearance-none"
                       >
                         <option value="" disabled>Select</option>
                         <option value="Female">Female</option>
@@ -460,7 +460,7 @@ export default function Profile() {
                         placeholder="e.g. Shipping, Office"
                         value={addressForm.label}
                         onChange={(e) => setAddressForm({ ...addressForm, label: e.target.value })}
-                        className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold/40"
+                        className="w-full rounded-xl border border-obsidian-border bg-obsidian-soft px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold"
                       />
                     </div>
                     <div className="space-y-1">
@@ -471,7 +471,7 @@ export default function Profile() {
                         placeholder="Recipient name"
                         value={addressForm.name}
                         onChange={(e) => setAddressForm({ ...addressForm, name: e.target.value })}
-                        className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold/40"
+                        className="w-full rounded-xl border border-obsidian-border bg-obsidian-soft px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold"
                       />
                     </div>
                   </div>
@@ -483,7 +483,7 @@ export default function Profile() {
                       placeholder="Street address, Suite, Apt"
                       value={addressForm.address}
                       onChange={(e) => setAddressForm({ ...addressForm, address: e.target.value })}
-                      className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold/40"
+                      className="w-full rounded-xl border border-obsidian-border bg-obsidian-soft px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -495,7 +495,7 @@ export default function Profile() {
                         placeholder="New York"
                         value={addressForm.city}
                         onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
-                        className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold/40"
+                        className="w-full rounded-xl border border-obsidian-border bg-obsidian-soft px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold"
                       />
                     </div>
                     <div className="space-y-1">
@@ -506,7 +506,7 @@ export default function Profile() {
                         placeholder="NY"
                         value={addressForm.state}
                         onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })}
-                        className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold/40"
+                        className="w-full rounded-xl border border-obsidian-border bg-obsidian-soft px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold"
                       />
                     </div>
                   </div>
@@ -519,7 +519,7 @@ export default function Profile() {
                         placeholder="10001"
                         value={addressForm.zipCode}
                         onChange={(e) => setAddressForm({ ...addressForm, zipCode: e.target.value })}
-                        className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold/40"
+                        className="w-full rounded-xl border border-obsidian-border bg-obsidian-soft px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold"
                       />
                     </div>
                     <div className="space-y-1">
@@ -530,7 +530,7 @@ export default function Profile() {
                         placeholder="USA"
                         value={addressForm.country}
                         onChange={(e) => setAddressForm({ ...addressForm, country: e.target.value })}
-                        className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold/40"
+                        className="w-full rounded-xl border border-obsidian-border bg-obsidian-soft px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold"
                       />
                     </div>
                   </div>
@@ -542,7 +542,7 @@ export default function Profile() {
                       placeholder="+1 (555) 000-0000"
                       value={addressForm.phone}
                       onChange={(e) => setAddressForm({ ...addressForm, phone: e.target.value })}
-                      className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold/40"
+                      className="w-full rounded-xl border border-obsidian-border bg-obsidian-soft px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold"
                     />
                   </div>
                   <div className="flex gap-3 pt-2">
@@ -567,8 +567,8 @@ export default function Profile() {
                   {addresses.map((addr) => (
                     <div
                       key={addr.id}
-                      className={`relative flex flex-col justify-between rounded-xl border p-5 space-y-4 bg-obsidian-light/40 transition-colors ${
-                        addr.isDefault ? "border-gold/40" : "border-obsidian-border"
+                      className={`relative flex flex-col justify-between rounded-xl border p-5 space-y-4 bg-obsidian-light transition-colors ${
+                        addr.isDefault ? "border-gold" : "border-obsidian-border"
                       }`}
                     >
                       <div>
@@ -701,7 +701,7 @@ export default function Profile() {
                     required
                     value={securityForm.newPassword}
                     onChange={(e) => setSecurityForm({ ...securityForm, newPassword: e.target.value })}
-                    className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-3 text-sm text-ivory outline-none focus:border-gold/40"
+                    className="w-full rounded-xl border border-obsidian-border bg-obsidian-soft px-4 py-3 text-sm text-ivory outline-none focus:border-gold"
                   />
                 </div>
                 <div className="space-y-1">
@@ -711,7 +711,7 @@ export default function Profile() {
                     required
                     value={securityForm.confirmPassword}
                     onChange={(e) => setSecurityForm({ ...securityForm, confirmPassword: e.target.value })}
-                    className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-3 text-sm text-ivory outline-none focus:border-gold/40"
+                    className="w-full rounded-xl border border-obsidian-border bg-obsidian-soft px-4 py-3 text-sm text-ivory outline-none focus:border-gold"
                   />
                 </div>
                 
