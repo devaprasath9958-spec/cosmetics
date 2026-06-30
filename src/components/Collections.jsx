@@ -38,6 +38,7 @@ export default function Collections() {
   };
 
   const updateCategoryParam = (category) => {
+    setSelectedCollection(null);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       if (category === "All") {
@@ -50,43 +51,28 @@ export default function Collections() {
   };
 
   // State Management
-  const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedBadges, setSelectedBadges] = useState([]);
   const [priceFilter, setPriceFilter] = useState("All"); // "All", "under-30", "30-60", "over-60"
   const [sortBy, setSortBy] = useState("default"); // "default", "price-asc", "price-desc", "rating"
   const [selectedCollection, setSelectedCollection] = useState(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  // Synchronize category from URL search params
-  useEffect(() => {
-    if (categoryParam) {
-      // Map URL parameters (like "Hair Care" or "Haircare")
-      const formatted = categoryParam === "Haircare" ? "Hair Care" : categoryParam;
-      setSelectedCategory(formatted);
-      setSelectedCollection(null); // Clear collection filter if category clicked
-    } else {
-      setSelectedCategory("All");
-    }
-  }, [categoryParam]);
+  // Derive selected category from URL directly for immediate updates (no useEffect delay)
+  const selectedCategory = categoryParam 
+    ? (categoryParam === "Haircare" ? "Hair Care" : categoryParam)
+    : "All";
 
   // Handle Featured Collection click
   const handleCollectionClick = (collection) => {
     if (selectedCollection?.id === collection.id) {
       // Clear
       setSelectedCollection(null);
-      setSelectedCategory("All");
       setSelectedBadges([]);
       setPriceFilter("All");
     } else {
       setSelectedCollection(collection);
       // Apply collection filters
-      const cats = collection.categories ?? [];
       const badges = collection.badges ?? [];
-      if (cats.length === 1) {
-        setSelectedCategory(cats[0]);
-      } else {
-        setSelectedCategory("All"); // Multiple categories will be handled in filter logic
-      }
       setSelectedBadges(badges);
       setPriceFilter("All"); // Custom range will be evaluated in the hook
       // Clear query params when a collection is selected to avoid conflicts
@@ -104,7 +90,6 @@ export default function Collections() {
 
   // Reset all filters
   const resetFilters = () => {
-    setSelectedCategory("All");
     setSelectedBadges([]);
     setPriceFilter("All");
     setSortBy("default");
@@ -280,12 +265,9 @@ export default function Collections() {
                 return (
                   <button
                     key={cat}
-                    onClick={() => {
-                      setSelectedCollection(null);
-                      updateCategoryParam(cat);
-                    }}
+                    onClick={() => updateCategoryParam(cat)}
                     className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
-                      selectedCategory === cat
+                      selectedCategory === cat && !selectedCollection
                         ? "bg-gold/10 text-gold font-medium"
                         : "text-smoke hover:bg-obsidian-light/50 hover:text-ivory"
                     }`}
@@ -391,10 +373,7 @@ export default function Collections() {
                   {!selectedCollection && selectedCategory !== "All" && (
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-obsidian-border bg-obsidian-light/60 px-2.5 py-0.5 text-xs text-smoke">
                       Category: {selectedCategory === "Hair Care" ? "Haircare" : selectedCategory === "Fragrance" ? "Fragrances" : selectedCategory}
-                      <button onClick={() => {
-                        setSelectedCategory("All");
-                        updateCategoryParam("All");
-                      }} className="hover:text-ivory">
+                      <button onClick={() => updateCategoryParam("All")} className="hover:text-ivory">
                         <X size={12} />
                       </button>
                     </span>
@@ -553,12 +532,9 @@ export default function Collections() {
                     return (
                       <button
                         key={cat}
-                        onClick={() => {
-                          setSelectedCollection(null);
-                          updateCategoryParam(cat);
-                        }}
+                        onClick={() => updateCategoryParam(cat)}
                         className={`rounded-full px-3.5 py-1.5 text-xs transition-all ${
-                          isSelected
+                          isSelected && !selectedCollection
                             ? "bg-gold text-obsidian font-semibold"
                             : "border border-obsidian-border bg-obsidian/40 text-smoke"
                         }`}

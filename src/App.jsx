@@ -72,67 +72,65 @@ function AppRoutes() {
       <ScrollToTop />
       {!isAdminRoute && <WhatsAppButton />}
       {!isAdminRoute && <CustomCursor />}
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedAdminRoute>
-                <AdminLayout />
-              </ProtectedAdminRoute>
-            }
-          >
-            <Route index element={<AdminDashboard />} />
-            <Route path="products" element={<AdminProducts />} />
-            <Route path="orders" element={<AdminOrders />} />
-            <Route path="customers" element={<AdminCustomers />} />
-            <Route path="reviews" element={<AdminReviews />} />
-            <Route path="categories" element={<AdminCategories />} />
-            <Route path="brands" element={<AdminBrands />} />
-            <Route path="offers" element={<AdminOffers />} />
-            <Route path="collections" element={<AdminCollections />} />
-            <Route path="blog" element={<AdminBlog />} />
-            <Route path="newsletter" element={<AdminNewsletter />} />
-            <Route path="messages" element={<AdminMessages />} />
-          </Route>
+      <Routes location={location} key={location.pathname}>
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedAdminRoute>
+              <AdminLayout />
+            </ProtectedAdminRoute>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="products" element={<AdminProducts />} />
+          <Route path="orders" element={<AdminOrders />} />
+          <Route path="customers" element={<AdminCustomers />} />
+          <Route path="reviews" element={<AdminReviews />} />
+          <Route path="categories" element={<AdminCategories />} />
+          <Route path="brands" element={<AdminBrands />} />
+          <Route path="offers" element={<AdminOffers />} />
+          <Route path="collections" element={<AdminCollections />} />
+          <Route path="blog" element={<AdminBlog />} />
+          <Route path="newsletter" element={<AdminNewsletter />} />
+          <Route path="messages" element={<AdminMessages />} />
+        </Route>
 
-          <Route
-            path="/"
-            element={
-              <StorefrontShell>
-                <Hero />
-                <Trending />
-                <Categories />
-                <Products />
-                <Reviews />
-                <Brands />
-                <Offers />
-                <Newsletter />
-                <InstagramGallery />
-              </StorefrontShell>
-            }
-          />
-          <Route path="/collections" element={<StorefrontShell><Collections /></StorefrontShell>} />
-          <Route path="/custom-beauty" element={<StorefrontShell><CustomBeauty /></StorefrontShell>} />
-          <Route path="/product/:id" element={<StorefrontShell><ProductDetails /></StorefrontShell>} />
-          <Route path="/orders" element={<StorefrontShell><Orders /></StorefrontShell>} />
-          <Route path="/cart" element={<StorefrontShell><Cart /></StorefrontShell>} />
-          <Route path="/profile" element={<StorefrontShell><Profile /></StorefrontShell>} />
-          <Route path="/about" element={<StorefrontShell><About /></StorefrontShell>} />
-          <Route path="/contact" element={<StorefrontShell><Contact /></StorefrontShell>} />
-          <Route path="/wishlist" element={<StorefrontShell><Wishlist /></StorefrontShell>} />
-          <Route path="/login" element={<StorefrontShell><Login /></StorefrontShell>} />
-          <Route path="/register" element={<StorefrontShell><Register /></StorefrontShell>} />
-          <Route path="/checkout" element={<StorefrontShell><Checkout /></StorefrontShell>} />
-          <Route path="/track-order" element={<StorefrontShell><OrderTracking /></StorefrontShell>} />
-          <Route path="/faq" element={<StorefrontShell><FAQ /></StorefrontShell>} />
-          <Route path="/blog" element={<StorefrontShell><Blog /></StorefrontShell>} />
-          <Route path="/blog/:id" element={<StorefrontShell><Blog /></StorefrontShell>} />
-          <Route path="/testimonials" element={<StorefrontShell><TestimonialsPage /></StorefrontShell>} />
-          <Route path="*" element={<StorefrontShell><NotFound /></StorefrontShell>} />
-        </Routes>
-      </AnimatePresence>
+        <Route
+          path="/"
+          element={
+            <StorefrontShell>
+              <Hero />
+              <Trending />
+              <Categories />
+              <Products />
+              <Reviews />
+              <Brands />
+              <Offers />
+              <Newsletter />
+              <InstagramGallery />
+            </StorefrontShell>
+          }
+        />
+        <Route path="/collections" element={<StorefrontShell><Collections /></StorefrontShell>} />
+        <Route path="/custom-beauty" element={<StorefrontShell><CustomBeauty /></StorefrontShell>} />
+        <Route path="/product/:id" element={<StorefrontShell><ProductDetails /></StorefrontShell>} />
+        <Route path="/orders" element={<StorefrontShell><Orders /></StorefrontShell>} />
+        <Route path="/cart" element={<StorefrontShell><Cart /></StorefrontShell>} />
+        <Route path="/profile" element={<StorefrontShell><Profile /></StorefrontShell>} />
+        <Route path="/about" element={<StorefrontShell><About /></StorefrontShell>} />
+        <Route path="/contact" element={<StorefrontShell><Contact /></StorefrontShell>} />
+        <Route path="/wishlist" element={<StorefrontShell><Wishlist /></StorefrontShell>} />
+        <Route path="/login" element={<StorefrontShell><Login /></StorefrontShell>} />
+        <Route path="/register" element={<StorefrontShell><Register /></StorefrontShell>} />
+        <Route path="/checkout" element={<StorefrontShell><Checkout /></StorefrontShell>} />
+        <Route path="/track-order" element={<StorefrontShell><OrderTracking /></StorefrontShell>} />
+        <Route path="/faq" element={<StorefrontShell><FAQ /></StorefrontShell>} />
+        <Route path="/blog" element={<StorefrontShell><Blog /></StorefrontShell>} />
+        <Route path="/blog/:id" element={<StorefrontShell><Blog /></StorefrontShell>} />
+        <Route path="/testimonials" element={<StorefrontShell><TestimonialsPage /></StorefrontShell>} />
+        <Route path="*" element={<StorefrontShell><NotFound /></StorefrontShell>} />
+      </Routes>
     </>
   );
 }
