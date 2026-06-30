@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Mail, Lock, ArrowRight } from "lucide-react";
 import { supabase } from "../supabaseClient";
+import { useAdminAuth } from "../contexts/AdminAuthContext.jsx";
+import { ADMIN_CREDENTIALS } from "../data/adminSeed.js";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -10,10 +12,25 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const { login: adminLogin } = useAdminAuth();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    // Automatic Admin Login Detection
+    if (formData.email.trim().toLowerCase() === ADMIN_CREDENTIALS.email.toLowerCase()) {
+      const adminResult = adminLogin(formData.email, formData.password);
+      setLoading(false);
+      if (adminResult.success) {
+        navigate("/admin", { replace: true });
+      } else {
+        setError(adminResult.error);
+      }
+      return;
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email: formData.email,
       password: formData.password,
