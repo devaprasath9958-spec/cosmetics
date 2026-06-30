@@ -1,63 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { User, MapPin, Package, Shield, Edit3, Save, Trash2, Plus, Check, Star, LogOut, ArrowRight, Eye, Sparkles, ChevronDown } from "lucide-react";
-
-const INITIAL_ADDRESSES = [
-  {
-    id: 1,
-    label: "Primary Shipping",
-    name: "Alexander Mercer",
-    address: "1024 Orchid Ave, Suite B",
-    cityStateZip: "New York, NY 10011",
-    phone: "+1 (555) 234-5678",
-    isDefault: true
-  },
-  {
-    id: 2,
-    label: "Billing Address",
-    name: "Alexander Mercer",
-    address: "485 Madison Ave, Floor 12",
-    cityStateZip: "New York, NY 10022",
-    phone: "+1 (555) 987-6543",
-    isDefault: false
-  }
-];
-
-const RECENT_ORDERS = [
-  {
-    id: "LM-8924-A",
-    date: "June 17, 2026",
-    status: "In Transit",
-    total: 116.00,
-    itemsPreview: "Dew Drop Serum + 1 other item"
-  },
-  {
-    id: "LM-9103-B",
-    date: "June 19, 2026",
-    status: "Processing",
-    total: 58.00,
-    itemsPreview: "Glass Skin Toner + 1 other item"
-  }
-];
+import { supabase } from "../supabaseClient";
+import { fetchOrders } from "../services/api.js";
 
 export default function Profile() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("personal"); // "personal", "addresses", "orders", "security"
+  const [activeTab, setActiveTab] = useState("personal");
   
-  // Profile Info state
-  const [userInfo, setUserInfo] = useState({
-    name: "Alexander Mercer",
-    email: "alexander.mercer@lume.com",
-    phone: "+1 (555) 234-5678",
-    membership: "Diamond VIP Tier",
-    memberSince: "September 2025"
-  });
+  const [userInfo, setUserInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [profileForm, setProfileForm] = useState({ ...userInfo });
+  const [profileForm, setProfileForm] = useState({});
   const [profileSuccess, setProfileSuccess] = useState(false);
 
-  // Address book state
-  const [addresses, setAddresses] = useState(INITIAL_ADDRESSES);
+  const [addresses, setAddresses] = useState([]);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [addressForm, setAddressForm] = useState({
     label: "Shipping",
@@ -67,9 +24,9 @@ export default function Profile() {
     phone: ""
   });
 
-  // Password state
+  const [orders, setOrders] = useState([]);
+
   const [securityForm, setSecurityForm] = useState({
-    currentPassword: "",
     newPassword: "",
     confirmPassword: ""
   });
@@ -77,52 +34,83 @@ export default function Profile() {
   const [securitySuccess, setSecuritySuccess] = useState(false);
   const [securityError, setSecurityError] = useState("");
 
-  // Handle profile edit save
-  const handleSaveProfile = (e) => {
+  useEffect(() => {
+    const fetchData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate("/login");
+        return;
+      }
+      
+      const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+      if (profile) {
+        setUserInfo(profile);
+        setProfileForm(profile);
+        setAddresses(profile.addresses || []);
+      }
+
+      const userOrders = await fetchOrders();
+      setOrders(userOrders);
+      
+      setLoading(false);
+    };
+    fetchData();
+  }, [navigate]);
+
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
-    setUserInfo({ ...profileForm });
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    await supabase.from("profiles").update({
+      name: profileForm.name,
+      phone: profileForm.phone
+    }).eq("id", user.id);
+    
+    setUserInfo({ ...userInfo, ...profileForm });
     setIsEditingProfile(false);
     setProfileSuccess(true);
     setTimeout(() => setProfileSuccess(false), 2500);
   };
 
-  // Address operations
-  const handleSetDefaultAddress = (id) => {
+  const handleSetDefaultAddress = async (id) => {
     const updated = addresses.map((addr) => ({
       ...addr,
       isDefault: addr.id === id,
-      label: addr.id === id ? "Primary Shipping" : addr.id === 2 ? "Billing Address" : "Shipping"
+      label: addr.id === id ? "Primary Shipping" : addr.label
     }));
     setAddresses(updated);
+    const { data: { user } } = await supabase.auth.getUser();
+    await supabase.from("profiles").update({ addresses: updated }).eq("id", user.id);
   };
 
-  const handleDeleteAddress = (id) => {
+  const handleDeleteAddress = async (id) => {
     const updated = addresses.filter((addr) => addr.id !== id);
     setAddresses(updated);
+    const { data: { user } } = await supabase.auth.getUser();
+    await supabase.from("profiles").update({ addresses: updated }).eq("id", user.id);
   };
 
-  const handleAddAddress = (e) => {
+  const handleAddAddress = async (e) => {
     e.preventDefault();
     const newAddress = {
       id: Date.now(),
-      isDefault: addresses.length === 0, // set default if first
+      isDefault: addresses.length === 0,
       ...addressForm
     };
-    setAddresses([...addresses, newAddress]);
+    const updated = [...addresses, newAddress];
+    setAddresses(updated);
     setIsAddingAddress(false);
     setAddressForm({
-      label: "Shipping",
-      name: "",
-      address: "",
-      cityStateZip: "",
-      phone: ""
+      label: "Shipping", name: "", address: "", cityStateZip: "", phone: ""
     });
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    await supabase.from("profiles").update({ addresses: updated }).eq("id", user.id);
   };
 
-  // Handle password update simulation
-  const handleUpdatePassword = (e) => {
+  const handleUpdatePassword = async (e) => {
     e.preventDefault();
-    if (!securityForm.currentPassword || !securityForm.newPassword || !securityForm.confirmPassword) {
+    if (!securityForm.newPassword || !securityForm.confirmPassword) {
       setSecurityError("All password fields are required.");
       return;
     }
@@ -133,13 +121,28 @@ export default function Profile() {
     setSecurityError("");
     setSecurityLoading(true);
 
-    setTimeout(() => {
-      setSecurityLoading(false);
+    const { error } = await supabase.auth.updateUser({
+      password: securityForm.newPassword
+    });
+
+    setSecurityLoading(false);
+    if (error) {
+      setSecurityError(error.message);
+    } else {
       setSecuritySuccess(true);
-      setSecurityForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setSecurityForm({ newPassword: "", confirmPassword: "" });
       setTimeout(() => setSecuritySuccess(false), 2500);
-    }, 1500);
+    }
   };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/login");
+  };
+
+  if (loading) {
+    return <div className="min-h-screen pt-32 text-center text-ivory">Loading profile...</div>;
+  }
 
   const tabItems = [
     { id: "personal", label: "Account Info", icon: User },
@@ -157,7 +160,7 @@ export default function Profile() {
           <span>/</span>
           <span className="text-gold font-medium">Profile</span>
         </div>
-        <span className="text-[10px] text-smoke italic">{userInfo.membership}</span>
+        <span className="text-[10px] text-smoke italic">{userInfo?.membership}</span>
       </div>
 
       {/* Profile Welcome Header */}
@@ -165,29 +168,24 @@ export default function Profile() {
         <div className="absolute right-0 top-0 -z-10 h-72 w-72 rounded-full bg-radial-fade blur-3xl opacity-60" />
         
         <div className="flex items-center gap-5 flex-col md:flex-row text-center md:text-left">
-          {/* Avatar sphere */}
           <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-tr from-gold to-rose-deep text-obsidian font-display text-2xl font-bold shadow-glow">
-            {userInfo.name.split(" ").map(w => w[0]).join("")}
+            {userInfo?.name?.split(" ").map(w => w[0]).join("")}
             <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-obsidian border border-gold/30 text-[10px] text-gold">
               <Star size={10} className="fill-gold" />
             </span>
           </div>
           <div>
             <h1 className="font-display text-2xl font-normal text-ivory tracking-wide flex items-center gap-2 justify-center md:justify-start">
-              Welcome, {userInfo.name}
+              Welcome, {userInfo?.name}
             </h1>
             <p className="text-xs text-smoke mt-1 leading-relaxed">
-              Member since {userInfo.memberSince} &bull; <strong className="text-gold font-medium">{userInfo.membership}</strong>
+              Member since {new Date(userInfo?.joined_date).toLocaleDateString()} &bull; <strong className="text-gold font-medium">{userInfo?.membership}</strong>
             </p>
           </div>
         </div>
 
         <button
-          onClick={() => {
-            localStorage.setItem("lume-cart", JSON.stringify([]));
-            window.dispatchEvent(new Event("cart-updated"));
-            navigate("/");
-          }}
+          onClick={handleSignOut}
           className="flex items-center gap-2 rounded-full border border-obsidian-border bg-obsidian-light/50 px-5 py-2.5 text-xs text-smoke hover:border-rose/30 hover:text-rose transition-colors"
         >
           <LogOut size={13} />
@@ -197,10 +195,7 @@ export default function Profile() {
 
       {/* Account Dashboard Layout */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        
-        {/* Navigation Sidebar (3 cols on lg) */}
         <aside className="lg:col-span-3 space-y-2">
-          {/* Desktop Nav */}
           <div className="hidden lg:block space-y-1">
             {tabItems.map((tab) => (
               <button
@@ -218,7 +213,6 @@ export default function Profile() {
             ))}
           </div>
 
-          {/* Mobile Select dropdown */}
           <div className="lg:hidden relative">
             <select
               value={activeTab}
@@ -235,7 +229,6 @@ export default function Profile() {
           </div>
         </aside>
 
-        {/* Content Details Display (9 cols on lg) */}
         <main className="lg:col-span-9 rounded-2xl border border-obsidian-border bg-obsidian-light/35 p-6 md:p-8 min-h-[400px]">
           
           {/* 1. PERSONAL DETAILS TAB */}
@@ -280,21 +273,19 @@ export default function Profile() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] uppercase tracking-wider text-gold font-medium block">Email Address</label>
+                    <label className="text-[10px] uppercase tracking-wider text-gold font-medium block">Email Address (Cannot Edit)</label>
                     <input
                       type="email"
-                      required
+                      disabled
                       value={profileForm.email}
-                      onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                      className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-3 text-sm text-ivory outline-none focus:border-gold/40"
+                      className="w-full rounded-xl border border-obsidian-border bg-obsidian-border/40 px-4 py-3 text-sm text-smoke outline-none cursor-not-allowed"
                     />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] uppercase tracking-wider text-gold font-medium block">Phone Number</label>
                     <input
                       type="tel"
-                      required
-                      value={profileForm.phone}
+                      value={profileForm.phone || ""}
                       onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
                       className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-3 text-sm text-ivory outline-none focus:border-gold/40"
                     />
@@ -320,21 +311,21 @@ export default function Profile() {
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 max-w-2xl">
                   <div>
                     <span className="text-[10px] uppercase tracking-wider text-smoke/70 block">Full Name</span>
-                    <span className="text-sm font-medium text-ivory block mt-1">{userInfo.name}</span>
+                    <span className="text-sm font-medium text-ivory block mt-1">{userInfo?.name}</span>
                   </div>
                   <div>
                     <span className="text-[10px] uppercase tracking-wider text-smoke/70 block">Email Address</span>
-                    <span className="text-sm font-medium text-ivory block mt-1">{userInfo.email}</span>
+                    <span className="text-sm font-medium text-ivory block mt-1">{userInfo?.email}</span>
                   </div>
                   <div>
                     <span className="text-[10px] uppercase tracking-wider text-smoke/70 block">Phone Number</span>
-                    <span className="text-sm font-medium text-ivory block mt-1">{userInfo.phone}</span>
+                    <span className="text-sm font-medium text-ivory block mt-1">{userInfo?.phone || "Not provided"}</span>
                   </div>
                   <div>
                     <span className="text-[10px] uppercase tracking-wider text-smoke/70 block">VIP Status</span>
                     <span className="inline-flex items-center gap-1 text-xs text-gold font-semibold mt-1 bg-gold/15 px-2 py-0.5 rounded border border-gold/30">
                       <Sparkles size={11} />
-                      {userInfo.membership}
+                      {userInfo?.membership}
                     </span>
                   </div>
                 </div>
@@ -440,6 +431,7 @@ export default function Profile() {
                 </form>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {addresses.length === 0 && <div className="text-sm text-smoke">No addresses saved.</div>}
                   {addresses.map((addr) => (
                     <div
                       key={addr.id}
@@ -511,7 +503,8 @@ export default function Profile() {
               </div>
 
               <div className="space-y-4">
-                {RECENT_ORDERS.map((order) => (
+                {orders.length === 0 && <div className="text-sm text-smoke">No recent orders found.</div>}
+                {orders.slice(0, 3).map((order) => (
                   <div
                     key={order.id}
                     onClick={() => navigate("/orders")}
@@ -520,15 +513,15 @@ export default function Profile() {
                     <div className="grid grid-cols-2 gap-4 sm:flex-1 sm:grid-cols-4 text-xs">
                       <div>
                         <span className="text-smoke/60 block uppercase tracking-wider text-[9px]">Reference</span>
-                        <span className="font-semibold text-ivory block mt-0.5">#{order.id}</span>
+                        <span className="font-semibold text-ivory block mt-0.5">#{order.id.slice(-8)}</span>
                       </div>
                       <div>
                         <span className="text-smoke/60 block uppercase tracking-wider text-[9px]">Date Placed</span>
-                        <span className="text-smoke block mt-0.5">{order.date}</span>
+                        <span className="text-smoke block mt-0.5">{new Date(order.created_at).toLocaleDateString()}</span>
                       </div>
                       <div>
-                        <span className="text-smoke/60 block uppercase tracking-wider text-[9px]">Items</span>
-                        <span className="text-smoke block mt-0.5 truncate max-w-xs">{order.itemsPreview}</span>
+                        <span className="text-smoke/60 block uppercase tracking-wider text-[9px]">Status</span>
+                        <span className="text-smoke block mt-0.5 truncate max-w-xs">{order.statusText}</span>
                       </div>
                       <div>
                         <span className="text-smoke/60 block uppercase tracking-wider text-[9px]">Total Cost</span>
@@ -569,18 +562,10 @@ export default function Profile() {
 
               <form onSubmit={handleUpdatePassword} className="space-y-4 max-w-md">
                 <div className="space-y-1">
-                  <label className="text-[10px] uppercase tracking-wider text-gold font-medium block">Current Password</label>
-                  <input
-                    type="password"
-                    value={securityForm.currentPassword}
-                    onChange={(e) => setSecurityForm({ ...securityForm, currentPassword: e.target.value })}
-                    className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-3 text-sm text-ivory outline-none focus:border-gold/40"
-                  />
-                </div>
-                <div className="space-y-1">
                   <label className="text-[10px] uppercase tracking-wider text-gold font-medium block">New Password</label>
                   <input
                     type="password"
+                    required
                     value={securityForm.newPassword}
                     onChange={(e) => setSecurityForm({ ...securityForm, newPassword: e.target.value })}
                     className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-3 text-sm text-ivory outline-none focus:border-gold/40"
@@ -590,6 +575,7 @@ export default function Profile() {
                   <label className="text-[10px] uppercase tracking-wider text-gold font-medium block">Confirm New Password</label>
                   <input
                     type="password"
+                    required
                     value={securityForm.confirmPassword}
                     onChange={(e) => setSecurityForm({ ...securityForm, confirmPassword: e.target.value })}
                     className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-3 text-sm text-ivory outline-none focus:border-gold/40"
@@ -599,7 +585,7 @@ export default function Profile() {
                 <button
                   type="submit"
                   disabled={securityLoading}
-                  className="w-full rounded-full bg-gold py-3.5 text-xs font-semibold text-obsidian hover:bg-gold-light mt-3 flex items-center justify-center gap-1.5 shadow-glow"
+                  className="w-full rounded-full bg-gold py-3.5 text-xs font-semibold text-obsidian hover:bg-gold-light mt-3 flex items-center justify-center gap-1.5 shadow-glow disabled:opacity-70"
                 >
                   {securityLoading ? (
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-obsidian border-t-transparent" />
@@ -613,9 +599,7 @@ export default function Profile() {
           )}
 
         </main>
-
       </div>
-
     </div>
   );
 }

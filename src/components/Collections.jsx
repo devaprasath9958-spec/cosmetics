@@ -1,49 +1,22 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search, SlidersHorizontal, X, ChevronDown, Sparkles, HelpCircle } from "lucide-react";
-import { products } from "../data/products.js";
+import { fetchProducts, fetchCollections } from "../services/api.js";
 import ProductCard from "./ui/ProductCard.jsx";
 
-const FEATURED_COLLECTIONS = [
-  {
-    id: "glow-ritual",
-    name: "Glow Ritual",
-    description: "Deep hydration and glass-skin radiance.",
-    categories: ["Skincare"],
-    badges: [],
-    priceRange: [30, 100],
-    accent: "from-gold/30 to-rose/10",
-  },
-  {
-    id: "midnight-majesty",
-    name: "Midnight Majesty",
-    description: "Seductive fragrances and velvet lips.",
-    categories: ["Fragrance", "Makeup"],
-    badges: ["Limited", "Bestseller"],
-    priceRange: [0, 150],
-    accent: "from-rose-deep/30 to-obsidian-soft",
-  },
-  {
-    id: "satin-restoration",
-    name: "Satin Restoration",
-    description: "Overnight therapy and flawless bases.",
-    categories: ["Hair Care", "Makeup"],
-    badges: ["Sale", "New"],
-    priceRange: [0, 100],
-    accent: "from-gold-dark/20 to-smoke/10",
-  },
-  {
-    id: "rose-quartz",
-    name: "Quartz Radiance",
-    description: "Luminous cheeks and highlights.",
-    categories: ["Makeup"],
-    badges: ["New", "Bestseller"],
-    priceRange: [0, 50],
-    accent: "from-rose/30 to-gold/10",
-  },
-];
-
 export default function Collections() {
+  const [products, setProducts] = useState([]);
+  const [featuredCollections, setFeaturedCollections] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(true);
+    Promise.all([fetchProducts(), fetchCollections()]).then(([p, c]) => {
+      setProducts(p);
+      setFeaturedCollections(c);
+      setIsLoading(false);
+    });
+  }, []);
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryParam = searchParams.get("category");
   const searchQuery = searchParams.get("search") ?? "";
@@ -107,12 +80,14 @@ export default function Collections() {
     } else {
       setSelectedCollection(collection);
       // Apply collection filters
-      if (collection.categories.length === 1) {
-        setSelectedCategory(collection.categories[0]);
+      const cats = collection.categories ?? [];
+      const badges = collection.badges ?? [];
+      if (cats.length === 1) {
+        setSelectedCategory(cats[0]);
       } else {
         setSelectedCategory("All"); // Multiple categories will be handled in filter logic
       }
-      setSelectedBadges(collection.badges);
+      setSelectedBadges(badges);
       setPriceFilter("All"); // Custom range will be evaluated in the hook
       // Clear query params when a collection is selected to avoid conflicts
       setSearchParams({});
@@ -153,8 +128,9 @@ export default function Collections() {
         // Category Filter
         if (selectedCollection) {
           // If a collection is selected, match its list of categories
-          if (selectedCollection.categories.length > 0) {
-            const hasCategory = selectedCollection.categories.includes(product.category);
+          const cats = selectedCollection.categories ?? [];
+          if (cats.length > 0) {
+            const hasCategory = cats.includes(product.category);
             if (!hasCategory) return false;
           }
         } else if (selectedCategory !== "All") {
@@ -163,9 +139,9 @@ export default function Collections() {
         }
 
         // Badge Filters
-        if (selectedCollection && selectedCollection.badges.length > 0) {
+        if (selectedCollection && (selectedCollection.badges ?? []).length > 0) {
           // If collection requires specific badges, match at least one
-          const matchBadge = selectedCollection.badges.includes(product.badge);
+          const matchBadge = (selectedCollection.badges ?? []).includes(product.badge);
           if (!matchBadge) return false;
         } else if (selectedBadges.length > 0) {
           // Normal badge checklist filter
@@ -174,7 +150,8 @@ export default function Collections() {
 
         // Price Filter
         if (selectedCollection) {
-          const [min, max] = selectedCollection.priceRange;
+          const priceRange = selectedCollection.priceRange ?? [0, Infinity];
+          const [min, max] = priceRange;
           if (product.price < min || product.price > max) return false;
         } else if (priceFilter !== "All") {
           if (priceFilter === "under-30" && product.price >= 30) return false;
@@ -226,7 +203,7 @@ export default function Collections() {
       <div className="mb-14">
         <h2 className="mb-6 font-display text-2xl text-ivory">Featured Curations</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {FEATURED_COLLECTIONS.map((col) => {
+          {featuredCollections.map((col) => {
             const isSelected = selectedCollection?.id === col.id;
             return (
               <button
@@ -249,7 +226,7 @@ export default function Collections() {
                 </div>
                 <div className="mt-6 flex items-center justify-between">
                   <span className="text-[10px] uppercase tracking-wider text-smoke/70">
-                    {col.categories.join(" + ")}
+                    {(col.categories ?? []).join(" + ")}
                   </span>
                   <span
                     className={`text-xs font-semibold ${
@@ -516,7 +493,13 @@ export default function Collections() {
           </div>
 
           {/* Product Grid */}
-          {filteredProducts.length > 0 ? (
+          {isLoading ? (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-80 w-full animate-pulse rounded-2xl bg-obsidian-light/50" />
+              ))}
+            </div>
+          ) : filteredProducts.length > 0 ? (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
               {filteredProducts.map((product) => (
                 <div key={product.id} className="animate-fade-up">

@@ -1,6 +1,7 @@
+import { useState, useEffect } from "react";
 import SectionHeading from "./ui/SectionHeading.jsx";
 import ReviewCard from "./ui/ReviewCard.jsx";
-import { reviews } from "../data/products.js";
+import { fetchReviews } from "../services/api.js";
 import { motion } from "framer-motion";
 
 const container = {
@@ -17,6 +18,15 @@ const item = {
 };
 
 export default function Reviews() {
+  const [reviews, setReviews] = useState([]);
+
+  useEffect(() => {
+    fetchReviews().then(data => {
+      // Limit to 3 reviews for the homepage
+      setReviews(data.slice(0, 3));
+    });
+  }, []);
+
   return (
     <section id="reviews" className="relative bg-obsidian-light/40 py-20 overflow-hidden">
       {/* Decorative Blur */}

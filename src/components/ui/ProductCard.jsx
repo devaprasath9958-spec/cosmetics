@@ -4,6 +4,8 @@ import { Heart, ShoppingBag, Check, Eye } from "lucide-react";
 import BottleIllustration from "./BottleIllustration.jsx";
 import StarRating from "./StarRating.jsx";
 import QuickViewModal from "./QuickViewModal.jsx";
+import { fetchWishlist, toggleWishlist, fetchCart, updateCartItem } from "../../services/api.js";
+import { useAuth } from "../../contexts/AuthContext.jsx";
 
 const badgeStyles = {
   Bestseller: "bg-gold/15 text-gold border-gold/30",
@@ -14,89 +16,64 @@ const badgeStyles = {
 
 export default function ProductCard({ product }) {
   const navigate = useNavigate();
-  const { id, name, subtitle, price, oldPrice, rating, reviews, badge, bottle, colors } =
+  const { id, name, subtitle, price, oldPrice, rating, reviews, badge, bottle, colors = [] } =
     product;
 
   const [saved, setSaved] = useState(false);
   const [added, setAdded] = useState(false);
   const [showQuickView, setShowQuickView] = useState(false);
+  const { requireAuth } = useAuth();
 
   useEffect(() => {
-    const checkSaved = () => {
+    const checkSaved = async () => {
       try {
-        const stored = localStorage.getItem("lume-wishlist");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          setSaved(parsed.some((item) => item.id === id));
-        } else {
-          setSaved(false);
-        }
+        const list = await fetchWishlist();
+        setSaved(list.some((item) => item.id === id));
       } catch (e) {
         setSaved(false);
       }
     };
     checkSaved();
     window.addEventListener("wishlist-updated", checkSaved);
-    window.addEventListener("storage", checkSaved);
     return () => {
       window.removeEventListener("wishlist-updated", checkSaved);
-      window.removeEventListener("storage", checkSaved);
     };
   }, [id]);
 
-  const handleToggleSave = (e) => {
+  const handleToggleSave = async (e) => {
     e.stopPropagation();
+    if (!requireAuth("Please sign in to save items to your wishlist.")) return;
+    
     try {
-      const stored = localStorage.getItem("lume-wishlist");
-      let list = stored ? JSON.parse(stored) : [];
+      const list = await fetchWishlist();
       const exists = list.some((item) => item.id === id);
-      
-      if (exists) {
-        list = list.filter((item) => item.id !== id);
-      } else {
-        list.push(product);
+      const result = await toggleWishlist(product, !exists);
+      if (result?.success !== false) {
+        setSaved(!exists);
+        window.dispatchEvent(new Event("wishlist-updated"));
       }
-      
-      localStorage.setItem("lume-wishlist", JSON.stringify(list));
-      window.dispatchEvent(new Event("wishlist-updated"));
     } catch (err) {
       console.error("Failed to update wishlist:", err);
     }
   };
 
-  const handleAdd = (e) => {
+  const handleAdd = async (e) => {
     e.stopPropagation();
+    if (!requireAuth("Please sign in to add items to your cart.")) return;
+
     try {
-      const stored = localStorage.getItem("lume-cart");
-      let cart = [];
-      if (stored) {
-        cart = JSON.parse(stored);
-      }
-      
-      const existingItemIdx = cart.findIndex(
+      const cart = await fetchCart();
+      const existingItem = cart.find(
         (item) => item.id === id && item.selectedShadeIndex === 0
       );
-      
-      if (existingItemIdx > -1) {
-        cart[existingItemIdx].qty += 1;
-      } else {
-        cart.push({
-          id,
-          name,
-          subtitle,
-          price,
-          qty: 1,
-          bottle: bottle || "bottle",
-          colors: colors || ["#C9A769", "#8B3A4B"],
-          selectedShadeIndex: 0
-        });
+      const newQty = existingItem ? existingItem.qty + 1 : 1;
+      const result = await updateCartItem(product, newQty);
+
+      if (result?.success !== false) {
+        window.dispatchEvent(new Event("cart-updated"));
+        setAdded(true);
+        setTimeout(() => setAdded(false), 2000);
       }
-      
-      localStorage.setItem("lume-cart", JSON.stringify(cart));
-      window.dispatchEvent(new Event("cart-updated"));
-      
-      setAdded(true);
-      setTimeout(() => setAdded(false), 2000);
     } catch (err) {
       console.error("Failed to add to cart:", err);
     }
@@ -118,8 +95,8 @@ export default function ProductCard({ product }) {
         ) : (
           <BottleIllustration
             variant={bottle}
-            from={colors[0]}
-            to={colors[1]}
+            from={colors[0] ?? '#C9A769'}
+            to={colors[1] ?? '#8B3A4B'}
             className="relative z-10 h-36 w-auto drop-shadow-xl transition-transform duration-500 group-hover:scale-105"
           />
         )}

@@ -6,20 +6,10 @@ export default function CustomCursor() {
   const [isHovering, setIsHovering] = useState(false);
 
   useEffect(() => {
-    // Hide default cursor
-    document.body.style.cursor = 'none';
-    
-    // Add style to all links and buttons
-    const styleHover = () => {
-      const elements = document.querySelectorAll('a, button');
-      elements.forEach(el => el.style.cursor = 'none');
-    };
-    
-    styleHover();
-
-    // Observer for dynamically added elements
-    const observer = new MutationObserver(styleHover);
-    observer.observe(document.body, { childList: true, subtree: true });
+    // Inject a global style to hide the cursor on everything
+    const style = document.createElement("style");
+    style.innerHTML = `* { cursor: none !important; }`;
+    document.head.appendChild(style);
 
     const updateMousePosition = (e) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
@@ -38,14 +28,13 @@ export default function CustomCursor() {
       }
     };
 
-    window.addEventListener("mousemove", updateMousePosition);
-    window.addEventListener("mouseover", handleMouseOver);
+    window.addEventListener("mousemove", updateMousePosition, { passive: true });
+    window.addEventListener("mouseover", handleMouseOver, { passive: true });
 
     return () => {
       window.removeEventListener("mousemove", updateMousePosition);
       window.removeEventListener("mouseover", handleMouseOver);
-      document.body.style.cursor = 'auto';
-      observer.disconnect();
+      document.head.removeChild(style);
     };
   }, []);
 
@@ -56,7 +45,7 @@ export default function CustomCursor() {
       scale: 1,
       backgroundColor: "transparent",
       border: "1px solid rgba(226, 200, 147, 0.5)",
-      transition: { type: "spring", stiffness: 500, damping: 28, mass: 0.5 },
+      transition: { type: "spring", stiffness: 400, damping: 28, mass: 0.5 },
     },
     hover: {
       x: mousePosition.x - 24,
@@ -65,7 +54,7 @@ export default function CustomCursor() {
       backgroundColor: "rgba(226, 200, 147, 0.1)",
       border: "1px solid rgba(226, 200, 147, 0.8)",
       backdropFilter: "blur(2px)",
-      transition: { type: "spring", stiffness: 500, damping: 28, mass: 0.5 },
+      transition: { type: "spring", stiffness: 400, damping: 28, mass: 0.5 },
     },
   };
 
@@ -74,6 +63,8 @@ export default function CustomCursor() {
       className="pointer-events-none fixed left-0 top-0 z-[9999] h-5 w-5 rounded-full"
       variants={variants}
       animate={isHovering ? "hover" : "default"}
+      style={{ willChange: "transform" }}
     />
   );
 }
+

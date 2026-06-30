@@ -1,42 +1,14 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Star, Quote } from "lucide-react";
-
-const testimonials = [
-  {
-    id: 1,
-    name: "Sarah Jenkins",
-    role: "Makeup Artist",
-    content: "The Luminous Foundation has completely changed my kit. It provides flawless coverage while looking like actual skin. My clients are obsessed.",
-    rating: 5,
-    image: "https://i.pravatar.cc/150?u=sarah"
-  },
-  {
-    id: 2,
-    name: "Emily Chen",
-    role: "Beauty Enthusiast",
-    content: "I've struggled with sensitive skin for years, but Lumé's skincare line is so gentle yet effective. The glow is real!",
-    rating: 5,
-    image: "https://i.pravatar.cc/150?u=emily"
-  },
-  {
-    id: 3,
-    name: "Jessica Taylor",
-    role: "Verified Buyer",
-    content: "The packaging alone is stunning, but the actual products exceed expectations. The Velvet Lipstick stays on all day without drying my lips.",
-    rating: 4,
-    image: "https://i.pravatar.cc/150?u=jessica"
-  },
-  {
-    id: 4,
-    name: "Amanda Rivera",
-    role: "Skincare Blogger",
-    content: "Their commitment to cruelty-free ingredients is what drew me in, but the undeniable results are what made me a loyal customer.",
-    rating: 5,
-    image: "https://i.pravatar.cc/150?u=amanda"
-  }
-];
+import { fetchReviews } from "../services/api.js";
 
 export default function TestimonialsPage() {
+  const [testimonials, setTestimonials] = useState([]);
+
+  useEffect(() => {
+    fetchReviews().then(setTestimonials);
+  }, []);
+
   return (
     <div className="pt-24 pb-16 min-h-screen px-4">
       <div className="max-w-6xl mx-auto">
@@ -59,17 +31,17 @@ export default function TestimonialsPage() {
                 ))}
               </div>
               
-              <p className="text-ivory mb-8 text-lg leading-relaxed relative z-10">"{testimonial.content}"</p>
+              <p className="text-ivory mb-8 text-lg leading-relaxed relative z-10">"{testimonial.content || testimonial.quote || testimonial.comment}"</p>
               
               <div className="flex items-center gap-4">
                 <img 
-                  src={testimonial.image} 
-                  alt={testimonial.name} 
+                  src={testimonial.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(testimonial.name || testimonial.customer || 'User')}&background=1a1a1a&color=d4af37`} 
+                  alt={testimonial.name || testimonial.customer} 
                   className="w-12 h-12 rounded-full object-cover border-2 border-gold/30"
                 />
                 <div>
-                  <h4 className="text-ivory font-medium">{testimonial.name}</h4>
-                  <p className="text-smoke text-sm">{testimonial.role}</p>
+                  <h4 className="text-ivory font-medium">{testimonial.name || testimonial.customer}</h4>
+                  <p className="text-smoke text-sm">{testimonial.role || (testimonial.productName ? `Reviewed ${testimonial.productName}` : "Verified Buyer")}</p>
                 </div>
               </div>
             </div>

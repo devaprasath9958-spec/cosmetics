@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import * as Icons from "lucide-react";
 
 export default function CategoryCard({ category }) {
-  const { name, count, icon, swatches } = category;
+  const { name, count, icon, swatches = [] } = category;
   const Icon = Icons[icon] ?? Icons.Sparkles;
   const navigate = useNavigate();
 

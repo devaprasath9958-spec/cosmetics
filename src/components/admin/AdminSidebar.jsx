@@ -10,6 +10,13 @@ import {
   Menu,
   X,
   Shield,
+  Tag,
+  Award,
+  Percent,
+  BookOpen,
+  Mail,
+  MessageSquare,
+  Layers,
 } from "lucide-react";
 import { useState } from "react";
 import { useAdminAuth } from "../../contexts/AdminAuthContext.jsx";
@@ -18,9 +25,16 @@ import ShadeSwatch from "../ui/ShadeSwatch.jsx";
 const navItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/admin/products", label: "Products", icon: Package },
+  { to: "/admin/categories", label: "Categories", icon: Tag },
+  { to: "/admin/brands", label: "Brands", icon: Award },
+  { to: "/admin/offers", label: "Offers", icon: Percent },
+  { to: "/admin/collections", label: "Collections", icon: Layers },
   { to: "/admin/orders", label: "Orders", icon: ShoppingBag },
   { to: "/admin/customers", label: "Customers", icon: Users },
   { to: "/admin/reviews", label: "Reviews", icon: Star },
+  { to: "/admin/blog", label: "Blog", icon: BookOpen },
+  { to: "/admin/newsletter", label: "Newsletter", icon: Mail },
+  { to: "/admin/messages", label: "Messages", icon: MessageSquare },
 ];
 
 function SidebarContent({ onNavigate }) {
@@ -49,7 +63,7 @@ function SidebarContent({ onNavigate }) {
         </p>
       </div>
 
-      <nav className="flex-1 space-y-1 px-3 py-4">
+      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
         {navItems.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
@@ -57,7 +71,7 @@ function SidebarContent({ onNavigate }) {
             end={end}
             onClick={onNavigate}
             className={({ isActive }) =>
-              `flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition-all ${
+              `flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm transition-all ${
                 isActive
                   ? "bg-gold/10 text-gold border border-gold/30 font-medium"
                   : "text-smoke hover:bg-obsidian-light/50 hover:text-ivory border border-transparent"

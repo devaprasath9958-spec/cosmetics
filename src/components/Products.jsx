@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SectionHeading from "./ui/SectionHeading.jsx";
 import ProductCard from "./ui/ProductCard.jsx";
 import Button from "./ui/Button.jsx";
-import { products } from "../data/products.js";
+import { fetchProducts } from "../services/api.js";
 import { ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -23,6 +23,16 @@ const item = {
 
 export default function Products() {
   const [active, setActive] = useState("All");
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(true);
+    fetchProducts().then(p => {
+      setProducts(p);
+      setIsLoading(false);
+    });
+  }, []);
 
   const visible =
     active === "All" ? products : products.filter((p) => p.category === active);
@@ -76,20 +86,26 @@ export default function Products() {
         viewport={{ once: true, margin: "-100px" }}
         className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
       >
-        <AnimatePresence mode="popLayout">
-          {visible.map((product) => (
-            <motion.div
-              key={product.id}
-              layout
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.3 }}
-            >
-              <ProductCard product={product} />
-            </motion.div>
-          ))}
-        </AnimatePresence>
+        {isLoading ? (
+          [...Array(4)].map((_, i) => (
+            <div key={i} className="h-80 w-full animate-pulse rounded-2xl bg-obsidian-light/50" />
+          ))
+        ) : (
+          <AnimatePresence mode="popLayout">
+            {visible.map((product) => (
+              <motion.div
+                key={product.id}
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ProductCard product={product} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        )}
       </motion.div>
 
       <motion.div 

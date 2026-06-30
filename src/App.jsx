@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { supabase } from "./supabaseClient.js";
+import { AuthProvider } from "./contexts/AuthContext.jsx";
 import { AdminAuthProvider } from "./contexts/AdminAuthContext.jsx";
 import { AdminDataProvider } from "./contexts/AdminDataContext.jsx";
 import { ReactLenis } from "@studio-freight/react-lenis";
@@ -43,6 +44,13 @@ import AdminProducts from "./components/admin/AdminProducts.jsx";
 import AdminOrders from "./components/admin/AdminOrders.jsx";
 import AdminCustomers from "./components/admin/AdminCustomers.jsx";
 import AdminReviews from "./components/admin/AdminReviews.jsx";
+import AdminCategories from "./components/admin/AdminCategories.jsx";
+import AdminBrands from "./components/admin/AdminBrands.jsx";
+import AdminOffers from "./components/admin/AdminOffers.jsx";
+import AdminCollections from "./components/admin/AdminCollections.jsx";
+import AdminBlog from "./components/admin/AdminBlog.jsx";
+import AdminNewsletter from "./components/admin/AdminNewsletter.jsx";
+import AdminMessages from "./components/admin/AdminMessages.jsx";
 import CustomCursor from "./components/CustomCursor.jsx";
 
 function StorefrontShell({ children }) {
@@ -80,6 +88,13 @@ function AppRoutes() {
             <Route path="orders" element={<AdminOrders />} />
             <Route path="customers" element={<AdminCustomers />} />
             <Route path="reviews" element={<AdminReviews />} />
+            <Route path="categories" element={<AdminCategories />} />
+            <Route path="brands" element={<AdminBrands />} />
+            <Route path="offers" element={<AdminOffers />} />
+            <Route path="collections" element={<AdminCollections />} />
+            <Route path="blog" element={<AdminBlog />} />
+            <Route path="newsletter" element={<AdminNewsletter />} />
+            <Route path="messages" element={<AdminMessages />} />
           </Route>
 
           <Route
@@ -124,26 +139,22 @@ function AppRoutes() {
 
 export default function App() {
   useEffect(() => {
-    const fetchProducts = async () => {
-      const { data, error } = await supabase.from('products').select('*');
-      if (error) {
-        console.error('Error fetching products:', error);
-      } else {
-        console.log('Products data:', data);
-      }
-    };
-    fetchProducts();
+    supabase.from('products').select('*').limit(1).then(({data}) => {
+      console.log('Product schema:', data ? Object.keys(data[0] || {}) : 'no data');
+    });
   }, []);
 
   return (
     <ReactLenis root>
-      <AdminAuthProvider>
-        <AdminDataProvider>
-          <div className="min-h-screen font-body transition-colors duration-300">
-            <AppRoutes />
-          </div>
-        </AdminDataProvider>
-      </AdminAuthProvider>
+      <AuthProvider>
+        <AdminAuthProvider>
+          <AdminDataProvider>
+            <div className="min-h-screen font-body transition-colors duration-300">
+              <AppRoutes />
+            </div>
+          </AdminDataProvider>
+        </AdminAuthProvider>
+      </AuthProvider>
     </ReactLenis>
   );
 }

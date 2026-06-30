@@ -2,43 +2,39 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Heart, Trash2, ShoppingBag, Check, Sparkles, HelpCircle } from "lucide-react";
 import BottleIllustration from "./ui/BottleIllustration.jsx";
+import { fetchWishlist, toggleWishlist, fetchCart, updateCartItem } from "../services/api.js";
+import { useAuth } from "../contexts/AuthContext.jsx";
 
 export default function Wishlist() {
   const navigate = useNavigate();
   const [wishlistItems, setWishlistItems] = useState([]);
   const [addedItems, setAddedItems] = useState({}); // maps item.id to boolean indicating success state
 
-  // Load wishlist from localStorage
+  const { user } = useAuth();
+
+  // Load wishlist from Supabase
   useEffect(() => {
-    const loadWishlist = () => {
+    const loadWishlist = async () => {
       try {
-        const stored = localStorage.getItem("lume-wishlist");
-        if (stored) {
-          setWishlistItems(JSON.parse(stored));
-        } else {
-          setWishlistItems([]);
-        }
+        const items = await fetchWishlist();
+        setWishlistItems(items);
       } catch (e) {
         setWishlistItems([]);
       }
     };
     loadWishlist();
     window.addEventListener("wishlist-updated", loadWishlist);
-    window.addEventListener("storage", loadWishlist);
     return () => {
       window.removeEventListener("wishlist-updated", loadWishlist);
-      window.removeEventListener("storage", loadWishlist);
     };
-  }, []);
+  }, [user]);
 
   // Remove item from wishlist
-  const handleRemove = (id) => {
+  const handleRemove = async (id) => {
     try {
-      const stored = localStorage.getItem("lume-wishlist");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        const filtered = parsed.filter((item) => item.id !== id);
-        localStorage.setItem("lume-wishlist", JSON.stringify(filtered));
+      const itemToRemove = wishlistItems.find(item => item.id === id);
+      if (itemToRemove) {
+        await toggleWishlist(itemToRemove, false);
         window.dispatchEvent(new Event("wishlist-updated"));
       }
     } catch (e) {
@@ -47,35 +43,34 @@ export default function Wishlist() {
   };
 
   // Add item to Cart
-  const handleAddToCart = (item) => {
+  const handleAddToCart = async (item) => {
     try {
-      const stored = localStorage.getItem("lume-cart");
-      let cart = stored ? JSON.parse(stored) : [];
-      
+      const cart = await fetchCart();
       const existingIdx = cart.findIndex(
         (cItem) => cItem.id === item.id && cItem.selectedShadeIndex === 0
       );
       
+      const customProduct = {
+        id: item.id,
+        name: item.name,
+        subtitle: item.subtitle,
+        price: item.price,
+        qty: 1,
+        bottle: item.bottle || "bottle",
+        colors: item.colors || ["#C9A769", "#8B3A4B"],
+        selectedShadeIndex: 0
+      };
+      
       if (existingIdx > -1) {
-        cart[existingIdx].qty += 1;
+        await updateCartItem(customProduct, cart[existingIdx].qty + 1);
       } else {
-        cart.push({
-          id: item.id,
-          name: item.name,
-          subtitle: item.subtitle,
-          price: item.price,
-          qty: 1,
-          bottle: item.bottle || "bottle",
-          colors: item.colors || ["#C9A769", "#8B3A4B"],
-          selectedShadeIndex: 0
-        });
+        await updateCartItem(customProduct, 1);
       }
       
-      localStorage.setItem("lume-cart", JSON.stringify(cart));
       window.dispatchEvent(new Event("cart-updated"));
 
       // Remove the item from the wishlist after moving it to cart.
-      handleRemove(item.id);
+      await handleRemove(item.id);
 
       // Set button success state temporarily
       setAddedItems((prev) => ({ ...prev, [item.id]: true }));

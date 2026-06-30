@@ -1,7 +1,14 @@
-import { brands } from "../data/products.js";
+import { useState, useEffect } from "react";
+import { fetchBrands } from "../services/api.js";
 import { motion } from "framer-motion";
 
 export default function Brands() {
+  const [brands, setBrands] = useState([]);
+
+  useEffect(() => {
+    fetchBrands().then(setBrands);
+  }, []);
+
   const looped = [...brands, ...brands];
 
   return (

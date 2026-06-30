@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Check, Gift, Heart, Package, Palette, ShoppingBag, Sparkles } from "lucide-react";
 import BottleIllustration from "./ui/BottleIllustration.jsx";
+import { fetchCart, updateCartItem, fetchWishlist, toggleWishlist } from "../services/api.js";
+import { useAuth } from "../contexts/AuthContext.jsx";
 
 const productTypes = {
   Lipstick: { basePrice: 34, bottle: "tube", category: "Makeup", subtitle: "Custom velvet lip color" },
@@ -58,6 +60,7 @@ export default function CustomBeauty() {
   const [packaging, setPackaging] = useState(packagingStyles[0]);
   const [wrap, setWrap] = useState(giftWrapping[0]);
   const [toast, setToast] = useState("");
+  const { requireAuth } = useAuth();
 
   const productConfig = productTypes[productType];
 
@@ -100,19 +103,14 @@ export default function CustomBeauty() {
     window.setTimeout(() => setToast(""), 2400);
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
+    if (!requireAuth("Please sign in to add items to your cart.")) return;
     try {
-      const stored = localStorage.getItem("lume-cart");
-      const cart = stored ? JSON.parse(stored) : [];
-      const existingIdx = cart.findIndex((item) => item.id === customItem.id && item.selectedShadeIndex === 0);
-
-      if (existingIdx > -1) {
-        cart[existingIdx].qty += 1;
-      } else {
-        cart.push(customItem);
-      }
-
-      localStorage.setItem("lume-cart", JSON.stringify(cart));
+      const cart = await fetchCart();
+      const existing = cart.find((item) => item.id === customItem.id && item.selectedShadeIndex === 0);
+      const newQty = existing ? existing.quantity + 1 : 1;
+      await updateCartItem(customItem, newQty);
+      
       window.dispatchEvent(new Event("cart-updated"));
       showToast("Custom beauty product added to your bag.");
     } catch (error) {
@@ -121,15 +119,14 @@ export default function CustomBeauty() {
     }
   };
 
-  const handleAddToWishlist = () => {
+  const handleAddToWishlist = async () => {
+    if (!requireAuth("Please sign in to save items to your wishlist.")) return;
     try {
-      const stored = localStorage.getItem("lume-wishlist");
-      let wishlist = stored ? JSON.parse(stored) : [];
+      const wishlist = await fetchWishlist();
       const exists = wishlist.some((item) => item.id === customItem.id);
 
       if (!exists) {
-        wishlist = [...wishlist, customItem];
-        localStorage.setItem("lume-wishlist", JSON.stringify(wishlist));
+        await toggleWishlist(customItem, true);
         window.dispatchEvent(new Event("wishlist-updated"));
         showToast("Custom beauty product saved to wishlist.");
       } else {

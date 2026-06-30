@@ -1,11 +1,13 @@
 import { useState, useMemo, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Heart, ShoppingBag, Star, ArrowLeft, Plus, Minus, Check, ChevronDown, Sparkles } from "lucide-react";
-import { products } from "../data/products.js";
+import { products as fallbackProducts } from "../data/products.js";
+import { fetchProducts, fetchCart, updateCartItem, fetchWishlist, toggleWishlist, fetchProductReviews } from "../services/api.js";
 import BottleIllustration from "./ui/BottleIllustration.jsx";
 import ProductCard from "./ui/ProductCard.jsx";
 import StarRating from "./ui/StarRating.jsx";
 import RelatedProducts from "./RelatedProducts.jsx";
+import { useAuth } from "../contexts/AuthContext.jsx";
 
 // Extended product information mapping to keep data files clean and supply rich details.
 const PRODUCT_INFO_EXTENSIONS = {
@@ -111,36 +113,22 @@ const DEFAULT_EXTENSION = {
   ingredients: "Water, Glycerin, Caprylic/Capric Triglyceride, Butylene Glycol, Pentylene Glycol, Phenoxyethanol, Ethylhexylglycerin, Tocopheryl Acetate, Xanthan Gum."
 };
 
-const MOCK_REVIEWS_DATABASE = {
-  p1: [
-    { name: "Sophia Reynolds", rating: 5, date: "2 weeks ago", comment: "My dry patches are completely gone! My face looks like glass after applying this. I've bought 3 bottles already." },
-    { name: "Marcus Thorne", rating: 4, date: "1 month ago", comment: "Excellent hydration. It is slightly tacky on application but sinks in within a minute. Skin feels incredibly plump." },
-  ],
-  p2: [
-    { name: "Elena Rostova", rating: 5, date: "3 days ago", comment: "Café Nude is the absolute perfect nude shade. It is so hard to find a matte that does not turn dry and flaky. This feels like velvet!" },
-    { name: "Jessica Kim", rating: 4, date: "3 weeks ago", comment: "Beautiful shade range and high pigment. Lasts through my morning coffee easily. Docked 1 star because it transfers slightly." },
-  ],
-  p3: [
-    { name: "Aria Vance", rating: 5, date: "1 month ago", comment: "This has done wonders for my texture. My pores on my nose look significantly smaller, and my skin tone looks so even." },
-    { name: "Devon Miller", rating: 5, date: "2 months ago", comment: "Lightweight, calming, and smells subtly like sweet rice water. Perfect for my sensitive skin." }
-  ],
-  p4: [
-    { name: "Isabella Martinez", rating: 5, date: "1 week ago", comment: "This is the most hypnotic fragrance I have ever owned. I get compliments literally every time I step out of the house. Extremely long-lasting." },
-    { name: "Nathan Patel", rating: 4, date: "1 month ago", comment: "Very unique woody floral. Strong amber notes. A bit heavy for summer days, but a stunning signature scent for evenings." }
-  ]
-};
-
-const DEFAULT_REVIEWS = [
-  { name: "Amara Nair", rating: 5, date: "3 weeks ago", comment: "LUMÉ has completely elevated my vanity. This product performs exactly as advertised. Beautiful packaging and textures!" },
-  { name: "Jordan Brooks", rating: 5, date: "2 months ago", comment: "A solid formulation that is gentle on my sensitive skin. Highly recommend for any daily skincare or makeup ritual." }
-];
+const DEFAULT_REVIEWS = [];
 
 export default function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { requireAuth } = useAuth();
 
-  const product = useMemo(() => {
-    return products.find((p) => p.id === id) || products[0];
+  const [products, setProducts] = useState([]);
+  const [product, setProduct] = useState(null);
+
+  useEffect(() => {
+    fetchProducts().then(data => {
+      setProducts(data);
+      const found = data.find((p) => p.id === id);
+      setProduct(found || data[0]);
+    });
   }, [id]);
 
   const [activeTab, setActiveTab] = useState("description"); // "description", "apply", "ingredients"
@@ -149,41 +137,27 @@ export default function ProductDetails() {
   const [wishlisted, setWishlisted] = useState(false);
 
   useEffect(() => {
-    const checkSaved = () => {
+    if (!product) return;
+    const checkSaved = async () => {
       try {
-        const stored = localStorage.getItem("lume-wishlist");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          setWishlisted(parsed.some((item) => item.id === product.id));
-        } else {
-          setWishlisted(false);
-        }
+        const list = await fetchWishlist();
+        setWishlisted(list.some((item) => item.id === product.id));
       } catch (e) {
         setWishlisted(false);
       }
     };
     checkSaved();
     window.addEventListener("wishlist-updated", checkSaved);
-    window.addEventListener("storage", checkSaved);
     return () => {
       window.removeEventListener("wishlist-updated", checkSaved);
-      window.removeEventListener("storage", checkSaved);
     };
-  }, [product.id]);
+  }, [product?.id]);
 
-  const handleToggleWishlist = () => {
+  const handleToggleWishlist = async () => {
+    if (!requireAuth("Please sign in to save items to your wishlist.")) return;
     try {
-      const stored = localStorage.getItem("lume-wishlist");
-      let list = stored ? JSON.parse(stored) : [];
-      const exists = list.some((item) => item.id === product.id);
-      
-      if (exists) {
-        list = list.filter((item) => item.id !== product.id);
-      } else {
-        list.push(product);
-      }
-      
-      localStorage.setItem("lume-wishlist", JSON.stringify(list));
+      await toggleWishlist(product, !wishlisted);
+      setWishlisted(!wishlisted);
       window.dispatchEvent(new Event("wishlist-updated"));
     } catch (err) {
       console.error("Failed to update wishlist:", err);
@@ -206,7 +180,7 @@ export default function ProductDetails() {
 
   const activeColors = useMemo(() => {
     // If the product has colors, use the selected one as main and the other as secondary
-    if (!product.colors || product.colors.length === 0) {
+    if (!product || !product.colors || product.colors.length === 0) {
       return ["#C9A769", "#8B3A4B"];
     }
     if (product.colors.length === 1) {
@@ -220,52 +194,55 @@ export default function ProductDetails() {
 
   // Get rich text metadata for active product
   const extension = useMemo(() => {
+    if (!product) return DEFAULT_EXTENSION;
     return PRODUCT_INFO_EXTENSIONS[product.id] || DEFAULT_EXTENSION;
   }, [product]);
 
   // Get related products from the same category
   const relatedProducts = useMemo(() => {
+    if (!product) return [];
     return products
       .filter((p) => p.category === product.category && p.id !== product.id)
       .slice(0, 3);
-  }, [product]);
+  }, [product, products]);
 
-  // Get reviews
-  const productReviews = useMemo(() => {
-    return MOCK_REVIEWS_DATABASE[product.id] || DEFAULT_REVIEWS;
-  }, [product]);
+  const [productReviews, setProductReviews] = useState([]);
+
+  useEffect(() => {
+    if (!product?.id) return;
+    fetchProductReviews(product.id).then((reviews) => {
+      setProductReviews(reviews.length > 0 ? reviews : DEFAULT_REVIEWS);
+    });
+  }, [product?.id]);
 
   const handleAddToCart = () => {
+    if (!requireAuth("Please sign in to add items to your cart.")) return;
     setIsAdding(true);
     
-    setTimeout(() => {
+    setTimeout(async () => {
       try {
-        const stored = localStorage.getItem("lume-cart");
-        let cart = [];
-        if (stored) {
-          cart = JSON.parse(stored);
-        }
-        
+        const cart = await fetchCart();
         const existingItemIdx = cart.findIndex(
           (item) => item.id === product.id && item.selectedShadeIndex === selectedShadeIndex
         );
         
+        const customProduct = {
+          id: product.id,
+          name: product.name,
+          subtitle: product.subtitle,
+          price: product.price,
+          qty: quantity,
+          bottle: product.bottle || "bottle",
+          colors: product.colors || ["#C9A769", "#8B3A4B"],
+          selectedShadeIndex: selectedShadeIndex
+        };
+
         if (existingItemIdx > -1) {
-          cart[existingItemIdx].qty += quantity;
+          await updateCartItem(customProduct, cart[existingItemIdx].qty + quantity);
         } else {
-          cart.push({
-            id: product.id,
-            name: product.name,
-            subtitle: product.subtitle,
-            price: product.price,
-            qty: quantity,
-            bottle: product.bottle || "bottle",
-            colors: product.colors || ["#C9A769", "#8B3A4B"],
-            selectedShadeIndex: selectedShadeIndex
-          });
+          await updateCartItem(customProduct, quantity);
         }
         
-        localStorage.setItem("lume-cart", JSON.stringify(cart));
         window.dispatchEvent(new Event("cart-updated"));
       } catch (e) {
         console.error("Failed to add to cart:", e);
@@ -282,6 +259,10 @@ export default function ProductDetails() {
     if (cat === "Fragrance") return "Fragrances";
     return cat;
   };
+
+  if (!product) {
+    return <div className="py-32 text-center text-ivory font-display text-2xl">Loading Product...</div>;
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8">
@@ -644,12 +625,12 @@ export default function ProductDetails() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="text-sm font-semibold text-ivory">{review.name}</h4>
+                    <h4 className="text-sm font-semibold text-ivory">{review.name || review.customer}</h4>
                     <span className="text-[10px] text-smoke">{review.date}</span>
                   </div>
                   <StarRating rating={review.rating} />
                 </div>
-                <p className="text-sm leading-relaxed text-smoke/90">{review.comment}</p>
+                <p className="text-sm leading-relaxed text-smoke/90">{review.comment || review.review}</p>
               </div>
             ))}
           </div>

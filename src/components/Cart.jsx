@@ -2,8 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, HelpCircle, Check, CreditCard, Sparkles, Receipt, Percent, X } from "lucide-react";
 import BottleIllustration from "./ui/BottleIllustration.jsx";
-
-const DEFAULT_CART = [];
+import { fetchCart, updateCartItem } from "../services/api.js";
+import { useAuth } from "../contexts/AuthContext.jsx";
 
 export default function Cart() {
   const navigate = useNavigate();
@@ -13,51 +13,56 @@ export default function Cart() {
   const [promoApplied, setPromoApplied] = useState(false);
   const [promoError, setPromoError] = useState(false);
   
-  // Checkout process simulation states
-  const [checkoutStage, setCheckoutStage] = useState("cart"); // "cart", "paying", "success"
-  const [mockOrderNumber, setMockOrderNumber] = useState("");
+  // Remove checkout process simulation states
 
-  // Load cart from localStorage or initialize with default items
+  const { user } = useAuth();
+
+  // Load cart from Supabase
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("lume-cart");
-      if (stored) {
-        setCartItems(JSON.parse(stored));
-      } else {
-        localStorage.setItem("lume-cart", JSON.stringify([]));
+    const loadCart = async () => {
+      try {
+        const items = await fetchCart();
+        setCartItems(items);
+      } catch (e) {
         setCartItems([]);
-        window.dispatchEvent(new Event("cart-updated"));
       }
-    } catch (e) {
-      setCartItems([]);
-    }
-  }, []);
+    };
+    loadCart();
+    
+    const onCartUpdated = () => { loadCart(); };
+    window.addEventListener("cart-updated", onCartUpdated);
+    return () => {
+      window.removeEventListener("cart-updated", onCartUpdated);
+    };
+  }, [user]);
 
-  // Save cart changes to localStorage and dispatch update events
-  const saveCart = (items) => {
-    setCartItems(items);
-    localStorage.setItem("lume-cart", JSON.stringify(items));
+  // Modify quantity
+  const updateQuantity = async (itemId, shadeIndex, amount) => {
+    const item = cartItems.find((i) => i.id === itemId && i.selectedShadeIndex === shadeIndex);
+    if (!item) return;
+    
+    const newQty = Math.max(1, item.qty + amount);
+    await updateCartItem(item, newQty);
+    
+    const updated = cartItems.map((i) => 
+      (i.id === itemId && i.selectedShadeIndex === shadeIndex) ? { ...i, qty: newQty } : i
+    );
+    setCartItems(updated);
     window.dispatchEvent(new Event("cart-updated"));
   };
 
-  // Modify quantity
-  const updateQuantity = (itemId, shadeIndex, amount) => {
-    const updated = cartItems.map((item) => {
-      if (item.id === itemId && item.selectedShadeIndex === shadeIndex) {
-        const newQty = Math.max(1, item.qty + amount);
-        return { ...item, qty: newQty };
-      }
-      return item;
-    });
-    saveCart(updated);
-  };
-
   // Remove item
-  const removeItem = (itemId, shadeIndex) => {
+  const removeItem = async (itemId, shadeIndex) => {
+    const item = cartItems.find((i) => i.id === itemId && i.selectedShadeIndex === shadeIndex);
+    if (item) {
+      await updateCartItem(item, 0); // 0 deletes it
+    }
+    
     const updated = cartItems.filter(
-      (item) => !(item.id === itemId && item.selectedShadeIndex === shadeIndex)
+      (i) => !(i.id === itemId && i.selectedShadeIndex === shadeIndex)
     );
-    saveCart(updated);
+    setCartItems(updated);
+    window.dispatchEvent(new Event("cart-updated"));
   };
 
   // Promo code validation
@@ -100,133 +105,9 @@ export default function Cart() {
     return subtotal - discountAmount + shippingCost + taxAmount;
   }, [subtotal, discountAmount, shippingCost, taxAmount]);
 
-  // Checkout process simulation
   const handleProceedToCheckout = () => {
-    setCheckoutStage("paying");
-    // Generate mock order ID
-    const randomId = `LM-${Math.floor(1000 + Math.random() * 9000)}-${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`;
-    setMockOrderNumber(randomId);
-
-    const now = new Date();
-    const formattedDate = now.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-    const formattedTime = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-
-    const newOrder = {
-      id: randomId,
-      date: formattedDate,
-      status: "Processing",
-      statusText: "Dermatological formulas are being verified and boxed.",
-      total: grandTotal,
-      shippingCost: shippingCost,
-      taxCost: taxAmount,
-      subtotal: subtotal,
-      paymentMethod: "Credit Card ending in 8831",
-      shippingAddress: "1024 Orchid Ave, Suite B, New York, NY 10011",
-      carrier: "FedEx Express",
-      trackingNumber: `FEDEX-${Math.floor(100000 + Math.random() * 900000)}-LM`,
-      items: [...cartItems],
-      timeline: [
-        { label: "Ordered", date: `${formattedDate}, ${formattedTime}`, completed: true, current: false },
-        { label: "Processing", date: `${formattedDate}, ${formattedTime}`, completed: true, current: true },
-        { label: "In Transit", date: "Pending shipment", completed: false, current: false },
-        { label: "Delivered", date: "Est. 3-5 days", completed: false, current: false }
-      ]
-    };
-
-    // Simulate Payment delay
-    setTimeout(() => {
-      try {
-        const storedOrders = localStorage.getItem("lume-orders");
-        let ordersList = [];
-        if (storedOrders) {
-          ordersList = JSON.parse(storedOrders);
-        } else {
-          // If the user hasn't loaded orders yet, we want to copy the initial ones,
-          // but we can import mock orders from Orders.jsx. Since we don't import, we will
-          // let Orders.jsx initialize itself. If Orders.jsx starts with MOCK_ORDERS, it will merge them.
-          // Wait, let's make sure Orders.jsx checks for stored orders.
-          // If storedOrders is null, we can initialize it with the MOCK_ORDERS in Orders.jsx,
-          // then prepend the new order. To be safe, we will just save the new order.
-          // In Orders.jsx, we will write: if storedOrders is found, use it; else, load MOCK_ORDERS,
-          // save them to localStorage, and add any new ones.
-        }
-        ordersList.unshift(newOrder);
-        localStorage.setItem("lume-orders", JSON.stringify(ordersList));
-        window.dispatchEvent(new Event("orders-updated"));
-      } catch (e) {
-        console.error("Failed to save order to localStorage:", e);
-      }
-
-      setCheckoutStage("success");
-      // Clear cart storage on success
-      localStorage.setItem("lume-cart", JSON.stringify([]));
-      window.dispatchEvent(new Event("cart-updated"));
-    }, 2200);
+    navigate("/checkout");
   };
-
-  if (checkoutStage === "paying") {
-    return (
-      <div className="mx-auto max-w-7xl px-6 py-32 lg:px-8 flex flex-col items-center justify-center text-center">
-        <div className="relative flex items-center justify-center mb-8">
-          {/* Glowing loader */}
-          <div className="h-16 w-16 animate-spin rounded-full border-4 border-gold/15 border-t-gold" />
-          <CreditCard className="absolute text-gold animate-pulse" size={22} />
-        </div>
-        <h2 className="font-display text-2xl text-ivory">Securing Your Rituals</h2>
-        <p className="mt-2 text-sm text-smoke max-w-xs leading-relaxed">
-          Please do not refresh or close this browser window. Processing your payment details...
-        </p>
-      </div>
-    );
-  }
-
-  if (checkoutStage === "success") {
-    return (
-      <div className="mx-auto max-w-2xl px-6 py-20 text-center animate-fade-up">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gold/15 border border-gold/40 text-gold mb-6 mx-auto shadow-glow">
-          <Check size={30} strokeWidth={2.5} />
-        </div>
-        <div className="mb-2 text-xs uppercase tracking-widest text-gold font-semibold">Payment Confirmed</div>
-        <h1 className="font-display text-4xl text-ivory">Order Placed Successfully!</h1>
-        
-        <div className="my-8 rounded-2xl border border-obsidian-border bg-obsidian-light/50 p-6 text-left space-y-4 max-w-md mx-auto text-sm">
-          <div className="flex justify-between border-b border-obsidian-border/50 pb-3">
-            <span className="text-smoke">Order Reference</span>
-            <span className="font-semibold text-ivory">#{mockOrderNumber}</span>
-          </div>
-          <div className="flex justify-between border-b border-obsidian-border/50 pb-3">
-            <span className="text-smoke">Est. Delivery</span>
-            <span className="text-ivory font-medium">3-5 Business Days</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-smoke">Status</span>
-            <span className="text-gold font-semibold uppercase tracking-wider text-xs bg-gold/15 px-2 py-0.5 rounded border border-gold/30">
-              Processing
-            </span>
-          </div>
-        </div>
-
-        <p className="text-sm text-smoke leading-relaxed max-w-md mx-auto mb-8">
-          Thank you for choosing LUMÉ. A receipt and shipping details have been sent to your email. You can monitor the progress of your parcel inside your account page.
-        </p>
-
-        <div className="flex flex-col gap-3 justify-center sm:flex-row max-w-md mx-auto">
-          <button
-            onClick={() => navigate("/orders")}
-            className="flex-1 rounded-full border border-obsidian-border bg-obsidian-light/60 py-3.5 text-sm font-semibold text-smoke hover:border-gold/30 hover:text-gold transition-all"
-          >
-            Track Order Progress
-          </button>
-          <button
-            onClick={() => navigate("/collections")}
-            className="flex-1 rounded-full bg-gold py-3.5 text-sm font-semibold text-obsidian hover:bg-gold-light transition-all"
-          >
-            Continue Shopping
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
@@ -285,8 +166,8 @@ export default function Cart() {
                     <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-obsidian border border-obsidian-border p-2.5 shrink-0">
                       <BottleIllustration
                         variant={item.bottle}
-                        from={item.colors[item.selectedShadeIndex]}
-                        to={item.colors[1 - item.selectedShadeIndex] || item.colors[0]}
+                        from={(item.colors ?? [])[item.selectedShadeIndex] ?? '#C9A769'}
+                        to={(item.colors ?? [])[1 - item.selectedShadeIndex] ?? (item.colors ?? [])[0] ?? '#8B3A4B'}
                         className="h-16 w-auto drop-shadow-md transition-transform duration-300 group-hover:scale-105"
                       />
                     </div>
@@ -302,12 +183,12 @@ export default function Cart() {
                       <p className="text-xs text-smoke">{item.subtitle}</p>
                       
                       {/* Selected color swatch indicator */}
-                      {item.colors && (
+                      {item.colors?.length > 0 && (
                         <div className="flex items-center gap-2 text-[10px] text-smoke">
                           <span>Shade:</span>
                           <span
                             className="h-2.5 w-2.5 rounded-full border border-obsidian-border"
-                            style={{ backgroundColor: item.colors[item.selectedShadeIndex] }}
+                            style={{ backgroundColor: item.colors[item.selectedShadeIndex] ?? item.colors[0] }}
                           />
                         </div>
                       )}

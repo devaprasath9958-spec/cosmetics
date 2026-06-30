@@ -1,4 +1,5 @@
 import { ArrowRight, Sparkles, Star } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import Button from "./ui/Button.jsx";
 import ShadeSwatch from "./ui/ShadeSwatch.jsx";
 import { motion, useScroll, useTransform } from "framer-motion";
@@ -19,6 +20,7 @@ const fadeUp = {
 };
 
 export default function Hero() {
+  const navigate = useNavigate();
   const { scrollY } = useScroll();
   const y1 = useTransform(scrollY, [0, 1000], [0, 150]);
   const y2 = useTransform(scrollY, [0, 1000], [0, -100]);
@@ -71,10 +73,18 @@ export default function Hero() {
           </motion.p>
 
           <motion.div variants={fadeUp} className="mt-10 flex flex-wrap items-center gap-5">
-            <Button variant="primary" className="group flex items-center gap-2 shadow-lg shadow-gold/20 transition-all hover:shadow-gold/40 hover:-translate-y-1">
+            <Button
+              variant="primary"
+              className="group flex items-center gap-2 shadow-lg shadow-gold/20 transition-all hover:shadow-gold/40 hover:-translate-y-1"
+              onClick={() => navigate("/collections")}
+            >
               Shop the Edit <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
             </Button>
-            <Button variant="outline" className="border-smoke/30 text-ivory hover:border-ivory hover:bg-ivory/5 transition-all">
+            <Button
+              variant="outline"
+              className="border-smoke/30 text-ivory hover:border-ivory hover:bg-ivory/5 transition-all"
+              onClick={() => navigate("/about")}
+            >
               Discover Ingredients
             </Button>
           </motion.div>

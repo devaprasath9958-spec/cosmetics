@@ -1,6 +1,7 @@
+import { useState, useEffect } from "react";
 import SectionHeading from "./ui/SectionHeading.jsx";
 import CategoryCard from "./ui/CategoryCard.jsx";
-import { categories } from "../data/products.js";
+import { fetchCategories } from "../services/api.js";
 import { motion } from "framer-motion";
 
 const container = {
@@ -17,6 +18,12 @@ const item = {
 };
 
 export default function Categories() {
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    fetchCategories().then(setCategories);
+  }, []);
+
   return (
     <section id="categories" className="mx-auto max-w-7xl px-6 py-20 lg:px-8 relative">
       <div className="absolute top-0 right-0 -z-10 h-72 w-72 rounded-full bg-gold/5 blur-3xl" />

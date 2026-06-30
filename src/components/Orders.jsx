@@ -2,145 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Package, Calendar, DollarSign, ChevronDown, Check, ArrowRight, Truck, Download, RefreshCcw, Star, HelpCircle, MapPin, CreditCard, Sparkles } from "lucide-react";
 import BottleIllustration from "./ui/BottleIllustration.jsx";
-
-const MOCK_ORDERS = [
-  {
-    id: "LM-8924-A",
-    date: "June 17, 2026",
-    status: "In Transit",
-    statusText: "Parcel is with the local courier for distribution.",
-    total: 116.00,
-    shippingCost: 12.00,
-    taxCost: 8.00,
-    subtotal: 96.00,
-    paymentMethod: "Visa ending in 4210",
-    shippingAddress: "1024 Orchid Ave, Suite B, New York, NY 10011",
-    carrier: "DHL Express",
-    trackingNumber: "DHL-982-1049-LM",
-    items: [
-      {
-        id: "p1",
-        name: "Dew Drop Serum",
-        subtitle: "Hyaluronic + Vitamin C",
-        price: 58,
-        qty: 1,
-        bottle: "bottle",
-        colors: ["#C9A769", "#8B3A4B"],
-        selectedShadeIndex: 0,
-      },
-      {
-        id: "p7",
-        name: "Satin Repair Mask",
-        subtitle: "Overnight hair therapy",
-        price: 38,
-        qty: 1,
-        bottle: "jar",
-        colors: ["#9C7F4C", "#A99CAE"],
-        selectedShadeIndex: 0,
-      }
-    ],
-    timeline: [
-      { label: "Ordered", date: "June 17, 10:30 AM", completed: true, current: false },
-      { label: "Processing", date: "June 17, 4:15 PM", completed: true, current: false },
-      { label: "In Transit", date: "June 18, 9:00 AM", completed: true, current: true },
-      { label: "Delivered", date: "Est. June 20", completed: false, current: false }
-    ]
-  },
-  {
-    id: "LM-9103-B",
-    date: "June 19, 2026",
-    status: "Processing",
-    statusText: "Dermatological formulas are being verified and boxed.",
-    total: 58.00,
-    shippingCost: 0.00, // Free shipping
-    taxCost: 4.00,
-    subtotal: 54.00,
-    paymentMethod: "Apple Pay",
-    shippingAddress: "1024 Orchid Ave, Suite B, New York, NY 10011",
-    carrier: "FedEx Standard",
-    trackingNumber: "FEDEX-827-3910-LM",
-    items: [
-      {
-        id: "p3",
-        name: "Glass Skin Toner",
-        subtitle: "Niacinamide + Rice Water",
-        price: 34,
-        qty: 1,
-        bottle: "bottle",
-        colors: ["#E2C893", "#9C7F4C"],
-        selectedShadeIndex: 0,
-      },
-      {
-        id: "p6",
-        name: "Cloud Cream Blush",
-        subtitle: "Shade — Rosewater",
-        price: 24,
-        qty: 1,
-        bottle: "jar",
-        colors: ["#D98C9B", "#8B3A4B"],
-        selectedShadeIndex: 0,
-      }
-    ],
-    timeline: [
-      { label: "Ordered", date: "June 19, 11:00 AM", completed: true, current: false },
-      { label: "Processing", date: "June 19, 1:45 PM", completed: true, current: true },
-      { label: "In Transit", date: "Pending shipment", completed: false, current: false },
-      { label: "Delivered", date: "Est. June 22", completed: false, current: false }
-    ]
-  },
-  {
-    id: "LM-7302-C",
-    date: "May 12, 2026",
-    status: "Delivered",
-    statusText: "Delivered to reception. Signature acquired.",
-    total: 150.00,
-    shippingCost: 0.00, // Free shipping
-    taxCost: 12.00,
-    subtotal: 138.00,
-    paymentMethod: "Visa ending in 4210",
-    shippingAddress: "1024 Orchid Ave, Suite B, New York, NY 10011",
-    carrier: "DHL Express",
-    trackingNumber: "DHL-901-4491-LM",
-    items: [
-      {
-        id: "p4",
-        name: "Midnight Bloom",
-        subtitle: "Eau de Parfum, 50ml",
-        price: 92,
-        qty: 1,
-        bottle: "bottle",
-        colors: ["#8B3A4B", "#C9A769"],
-        selectedShadeIndex: 0,
-      },
-      {
-        id: "p2",
-        name: "Velvet Matte Lipstick",
-        subtitle: "Shade — Café Nude",
-        price: 26,
-        qty: 1,
-        bottle: "tube",
-        colors: ["#8B3A4B", "#D98C9B"],
-        selectedShadeIndex: 1,
-      },
-      {
-        id: "p8",
-        name: "Rose Quartz Highlighter",
-        subtitle: "Pressed luminizer",
-        price: 30,
-        qty: 1,
-        bottle: "jar",
-        colors: ["#E2C893", "#D98C9B"],
-        selectedShadeIndex: 0,
-      }
-    ],
-    timeline: [
-      { label: "Ordered", date: "May 12, 2:30 PM", completed: true, current: false },
-      { label: "Processing", date: "May 12, 5:00 PM", completed: true, current: false },
-      { label: "In Transit", date: "May 13, 8:30 AM", completed: true, current: false },
-      { label: "Delivered", date: "May 14, 2:15 PM", completed: true, current: true }
-    ]
-  }
-];
+import { fetchOrders, fetchCart, updateCartItem } from "../services/api.js";
 
 const statusStyles = {
   "In Transit": "bg-rose-deep/20 text-rose border-rose/30",
@@ -151,23 +13,21 @@ const statusStyles = {
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
-  const [expandedOrderId, setExpandedOrderId] = useState("LM-8924-A"); // Default first order open
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
   const [reorderingId, setReorderingId] = useState(null);
   const [successActionId, setSuccessActionId] = useState(null);
 
   useEffect(() => {
-    const loadOrders = () => {
+    const loadOrders = async () => {
       try {
-        const stored = localStorage.getItem("lume-orders");
-        if (stored) {
-          setOrders(JSON.parse(stored));
-        } else {
-          localStorage.setItem("lume-orders", JSON.stringify(MOCK_ORDERS));
-          setOrders(MOCK_ORDERS);
+        const data = await fetchOrders();
+        setOrders(data);
+        if (data.length > 0) {
+          setExpandedOrderId((current) => current || data[0].id);
         }
       } catch (e) {
-        setOrders(MOCK_ORDERS);
+        setOrders([]);
       }
     };
     loadOrders();
@@ -192,23 +52,18 @@ export default function Orders() {
   const handleReorder = (orderId, e) => {
     e.stopPropagation();
     setReorderingId(orderId);
-    setTimeout(() => {
+    setTimeout(async () => {
       try {
         const order = orders.find((o) => o.id === orderId);
         if (order && order.items) {
-          const stored = localStorage.getItem("lume-cart");
-          let cart = stored ? JSON.parse(stored) : [];
-          order.items.forEach((item) => {
+          const cart = await fetchCart();
+          for (const item of order.items) {
             const existingIdx = cart.findIndex(
               (cItem) => cItem.id === item.id && cItem.selectedShadeIndex === item.selectedShadeIndex
             );
-            if (existingIdx > -1) {
-              cart[existingIdx].qty += item.qty;
-            } else {
-              cart.push({ ...item });
-            }
-          });
-          localStorage.setItem("lume-cart", JSON.stringify(cart));
+            const newQty = existingIdx > -1 ? cart[existingIdx].qty + item.qty : item.qty;
+            await updateCartItem(item, newQty);
+          }
           window.dispatchEvent(new Event("cart-updated"));
         }
       } catch (err) {
@@ -254,7 +109,7 @@ export default function Orders() {
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-3 mb-12">
         {[
           { label: "Total Orders", value: orders.length, icon: Package, desc: "Completed & active orders" },
-          { label: "Lifetime Investment", value: `$${orders.reduce((a, o) => a + o.total, 0).toFixed(2)}`, icon: DollarSign, desc: "Excluding promotional credit" },
+          { label: "Lifetime Investment", value: `$${orders.reduce((a, o) => a + (o.total ?? 0), 0).toFixed(2)}`, icon: DollarSign, desc: "Excluding promotional credit" },
           { label: "Active Shipments", value: orders.filter(o => o.status !== "Delivered").length, icon: Truck, desc: "Currently on their way to you" }
         ].map((metric, i) => (
           <div key={i} className="flex items-start justify-between rounded-2xl border border-obsidian-border bg-obsidian-light/60 p-6">
@@ -366,7 +221,7 @@ export default function Orders() {
                         />
 
                         <div className="flex flex-col gap-6 sm:flex-row sm:justify-between">
-                          {order.timeline.map((step, idx) => (
+                          {(order.timeline ?? []).map((step, idx) => (
                             <div key={idx} className="flex items-start gap-4 sm:flex-col sm:items-center sm:gap-2 sm:flex-1 text-left sm:text-center">
                               
                               {/* Milestone dot */}
@@ -405,7 +260,7 @@ export default function Orders() {
                       <div className="lg:col-span-7 space-y-4">
                         <h4 className="text-xs font-semibold uppercase tracking-widest text-gold mb-2">Order Items</h4>
                         <div className="space-y-3">
-                          {order.items.map((item, idx) => (
+                          {(order.items ?? []).map((item, idx) => (
                             <div
                               key={item.id + idx}
                               className="flex items-center justify-between rounded-xl border border-obsidian-border/50 bg-obsidian-light/35 p-4"
@@ -414,8 +269,8 @@ export default function Orders() {
                                 <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-obsidian p-2 border border-obsidian-border shrink-0">
                                   <BottleIllustration
                                     variant={item.bottle}
-                                    from={item.colors[item.selectedShadeIndex]}
-                                    to={item.colors[1 - item.selectedShadeIndex] || item.colors[0]}
+                                    from={(item.colors ?? [])[item.selectedShadeIndex] ?? '#C9A769'}
+                                    to={(item.colors ?? [])[1 - item.selectedShadeIndex] ?? (item.colors ?? [])[0] ?? '#8B3A4B'}
                                     className="h-12 w-auto drop-shadow-md"
                                   />
                                 </div>
@@ -428,12 +283,12 @@ export default function Orders() {
                                   {/* Swatch & Qty Display */}
                                   <div className="flex items-center gap-3 mt-1">
                                     <span className="text-[10px] text-smoke">Qty: {item.qty}</span>
-                                    {item.colors && (
-                                      <span className="flex items-center gap-1.5 text-[10px] text-smoke">
+                                    {item.colors?.length > 0 && (
+                                       <span className="flex items-center gap-1.5 text-[10px] text-smoke">
                                         Shade:
                                         <span
                                           className="h-2 w-2 rounded-full border border-obsidian-border inline-block"
-                                          style={{ backgroundColor: item.colors[item.selectedShadeIndex] }}
+                                          style={{ backgroundColor: item.colors[item.selectedShadeIndex] ?? item.colors[0] }}
                                         />
                                       </span>
                                     )}

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Menu, Search, ShoppingBag, User, X, Heart, Moon, Sun } from "lucide-react";
 import ShadeSwatch from "./ui/ShadeSwatch.jsx";
 import { useTheme } from "../contexts/ThemeContext.jsx";
+import { fetchCart, fetchWishlist } from "../services/api.js";
 
 const links = [
   { label: "Shop All", href: "/collections" },
@@ -32,48 +33,34 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    const updateCartCount = () => {
+    const updateCartCount = async () => {
       try {
-        const stored = localStorage.getItem("lume-cart");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          const totalQty = parsed.reduce((sum, item) => sum + item.qty, 0);
-          setCartCount(totalQty);
-        } else {
-          setCartCount(0);
-        }
+        const items = await fetchCart();
+        const totalQty = items.reduce((sum, item) => sum + item.qty, 0);
+        setCartCount(totalQty);
       } catch (e) {
         setCartCount(0);
       }
     };
     updateCartCount();
-    window.addEventListener("storage", updateCartCount);
     window.addEventListener("cart-updated", updateCartCount);
     return () => {
-      window.removeEventListener("storage", updateCartCount);
       window.removeEventListener("cart-updated", updateCartCount);
     };
   }, []);
 
   useEffect(() => {
-    const updateWishlistCount = () => {
+    const updateWishlistCount = async () => {
       try {
-        const stored = localStorage.getItem("lume-wishlist");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          setWishlistCount(parsed.length);
-        } else {
-          setWishlistCount(0);
-        }
+        const items = await fetchWishlist();
+        setWishlistCount(items.length);
       } catch (e) {
         setWishlistCount(0);
       }
     };
     updateWishlistCount();
-    window.addEventListener("storage", updateWishlistCount);
     window.addEventListener("wishlist-updated", updateWishlistCount);
     return () => {
-      window.removeEventListener("storage", updateWishlistCount);
       window.removeEventListener("wishlist-updated", updateWishlistCount);
     };
   }, []);

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin, Clock, Send, CheckCircle2, AlertCircle } from "lucide-react";
+import { submitContact } from "../services/api.js";
 
 export default function Contact() {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
@@ -20,17 +21,21 @@ export default function Contact() {
     return Object.keys(tempErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
     setStatus("sending");
     
-    // Simulate API request delay
-    setTimeout(() => {
+    const result = await submitContact(form);
+    
+    if (result.success) {
       setStatus("success");
       setForm({ name: "", email: "", subject: "", message: "" });
-    }, 1800);
+    } else {
+      setStatus("idle");
+      console.error(result.error);
+    }
   };
 
   return (

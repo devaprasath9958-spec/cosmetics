@@ -2,17 +2,26 @@ import { useState } from "react";
 import { ArrowRight, Mail } from "lucide-react";
 import ShadeSwatch from "./ui/ShadeSwatch.jsx";
 import { motion } from "framer-motion";
+import { subscribeNewsletter } from "../services/api";
 
 const dots = ["#C9A769", "#D98C9B", "#8B3A4B", "#E2C893"];
 
 export default function Newsletter() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email) return;
-    setSubmitted(true);
+    setLoading(true);
+    const result = await subscribeNewsletter(email);
+    setLoading(false);
+    if (result.success) {
+      setSubmitted(true);
+    } else {
+      console.error(result.error);
+    }
   };
 
   return (

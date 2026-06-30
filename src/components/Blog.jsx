@@ -1,38 +1,21 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Calendar, User } from "lucide-react";
-
-const posts = [
-  {
-    id: 1,
-    title: "The Ultimate Guide to Evening Skincare Routines",
-    excerpt: "Discover the secrets to waking up with glowing, refreshed skin using our signature evening routine.",
-    author: "Emma Stone",
-    date: "Oct 15, 2026",
-    image: "https://images.unsplash.com/photo-1615397323861-55c3c0d83637?auto=format&fit=crop&q=80&w=800",
-    category: "Skincare"
-  },
-  {
-    id: 2,
-    title: "5 Fall Makeup Trends You Need to Try",
-    excerpt: "From deep berry lips to subtle metallic eyeshadows, explore the hottest trends this autumn.",
-    author: "Sophie Chen",
-    date: "Oct 12, 2026",
-    image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&q=80&w=800",
-    category: "Makeup"
-  },
-  {
-    id: 3,
-    title: "Demystifying Hyaluronic Acid",
-    excerpt: "Everything you need to know about this powerhouse ingredient and how to incorporate it into your routine.",
-    author: "Dr. Amanda Rivera",
-    date: "Oct 08, 2026",
-    image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&q=80&w=800",
-    category: "Ingredients"
-  }
-];
+import { fetchBlogPosts } from "../services/api";
 
 export default function Blog() {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadPosts = async () => {
+      const data = await fetchBlogPosts();
+      setPosts(data);
+      setLoading(false);
+    };
+    loadPosts();
+  }, []);
+
   return (
     <div className="pt-24 pb-16 min-h-screen px-4">
       <div className="max-w-6xl mx-auto">
@@ -41,8 +24,13 @@ export default function Blog() {
           <p className="text-smoke max-w-2xl mx-auto">Beauty tips, skincare advice, and behind-the-scenes stories from our experts.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {posts.map((post) => (
+        {loading ? (
+          <div className="text-center text-smoke py-12">Loading journal entries...</div>
+        ) : posts.length === 0 ? (
+          <div className="text-center text-smoke py-12">No posts available yet.</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {posts.map((post) => (
             <article key={post.id} className="bg-obsidian-light rounded-xl overflow-hidden border border-obsidian-border hover:border-gold transition-colors group">
               <div className="relative h-60 overflow-hidden">
                 <img 
@@ -77,7 +65,8 @@ export default function Blog() {
               </div>
             </article>
           ))}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

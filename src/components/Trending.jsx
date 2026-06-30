@@ -1,11 +1,57 @@
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import Button from "./ui/Button.jsx";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Check } from "lucide-react";
+import { fetchProducts, fetchCart, updateCartItem } from "../services/api.js";
+import { useAuth } from "../contexts/AuthContext.jsx";
 
 export default function Trending() {
   const containerRef = useRef(null);
+  const [product, setProduct] = useState(null);
+  const [added, setAdded] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { requireAuth } = useAuth();
   
+  useEffect(() => {
+    const loadProduct = async () => {
+      try {
+        const products = await fetchProducts();
+        const found = products.find(p => p.name.includes("Luminous Silk Primer") || p.name.includes("Primer"));
+        if (found) {
+          setProduct(found);
+        }
+      } catch (err) {
+        console.error("Failed to load trending product", err);
+      }
+    };
+    loadProduct();
+  }, []);
+
+  const handleAdd = async () => {
+    if (!product || loading) return;
+    if (!requireAuth("Please sign in to add items to your cart.")) return;
+    
+    setLoading(true);
+    try {
+      const cart = await fetchCart();
+      const existingItem = cart.find(
+        (item) => item.id === product.id && item.selectedShadeIndex === 0
+      );
+      const newQty = existingItem ? existingItem.qty + 1 : 1;
+      const result = await updateCartItem(product, newQty);
+
+      if (result?.success !== false) {
+        window.dispatchEvent(new Event("cart-updated"));
+        setAdded(true);
+        setTimeout(() => setAdded(false), 2000);
+      }
+    } catch (err) {
+      console.error("Failed to add trending to cart:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"],
@@ -48,7 +94,7 @@ export default function Trending() {
                   <span className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-obsidian-light/60 px-3 py-1 text-xs font-semibold tracking-widest text-gold backdrop-blur-md">
                     <Sparkles size={12} /> #1 TRENDING
                   </span>
-                  <p className="font-display text-3xl text-ivory drop-shadow-md">Luminous Silk Primer</p>
+                  <p className="font-display text-3xl text-ivory drop-shadow-md">{product ? product.name : "Luminous Silk Primer"}</p>
                 </div>
               </div>
             </motion.div>
@@ -95,11 +141,30 @@ export default function Trending() {
 
               <div className="mt-12 flex items-center gap-6">
                 <div className="flex flex-col">
-                  <span className="text-2xl font-semibold text-ivory">$42</span>
+                  <span className="text-2xl font-semibold text-ivory">${product ? product.price : "42"}</span>
                   <span className="text-xs text-smoke">Free shipping</span>
                 </div>
-                <Button variant="primary" className="flex-1 justify-center shadow-lg shadow-gold/20 hover:shadow-gold/40">
-                  Add to Cart <ArrowRight size={16} />
+                <Button 
+                  variant="primary" 
+                  className={`flex-1 justify-center shadow-lg transition-all duration-300 ${
+                    added 
+                      ? "bg-ivory text-obsidian shadow-gold/20" 
+                      : "shadow-gold/20 hover:shadow-gold/40"
+                  }`}
+                  onClick={handleAdd}
+                  disabled={!product || loading}
+                >
+                  {added ? (
+                    <>
+                      Added to Cart <Check size={16} className="ml-2" />
+                    </>
+                  ) : loading ? (
+                    "Adding..."
+                  ) : (
+                    <>
+                      Add to Cart <ArrowRight size={16} className="ml-2" />
+                    </>
+                  )}
                 </Button>
               </div>
             </motion.div>

@@ -1,8 +1,32 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Mail, Lock, ArrowRight } from "lucide-react";
+import { supabase } from "../supabaseClient";
 
 export default function Login() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: formData.email,
+      password: formData.password,
+    });
+    setLoading(false);
+    if (error) {
+      setError(error.message);
+    } else {
+      const from = location.state?.from || "/profile";
+      navigate(from, { replace: true });
+    }
+  };
+
   return (
     <div className="pt-24 pb-16 min-h-screen flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-obsidian-light border border-obsidian-border rounded-xl p-8 shadow-card relative overflow-hidden">
@@ -15,12 +39,21 @@ export default function Login() {
             <p className="text-smoke text-sm">Sign in to access your Lumé account.</p>
           </div>
 
-          <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+          {error && (
+            <div className="mb-4 p-3 bg-rose-deep/20 border border-rose/30 text-rose text-sm rounded-lg">
+              {error}
+            </div>
+          )}
+
+          <form className="space-y-5" onSubmit={handleSubmit}>
             <div>
               <label className="block text-sm font-medium mb-2 text-ivory">Email</label>
               <div className="relative">
                 <input
                   type="email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full bg-obsidian-soft border border-obsidian-border rounded-lg pl-10 pr-4 py-3 text-ivory focus:outline-none focus:border-gold transition-colors"
                   placeholder="you@example.com"
                 />
@@ -38,6 +71,9 @@ export default function Login() {
               <div className="relative">
                 <input
                   type="password"
+                  required
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="w-full bg-obsidian-soft border border-obsidian-border rounded-lg pl-10 pr-4 py-3 text-ivory focus:outline-none focus:border-gold transition-colors"
                   placeholder="••••••••"
                 />
@@ -47,10 +83,11 @@ export default function Login() {
 
             <button
               type="submit"
-              className="w-full bg-gold hover:bg-gold-light text-obsidian font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 group"
+              disabled={loading}
+              className="w-full bg-gold hover:bg-gold-light text-obsidian font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 group disabled:opacity-70"
             >
-              Sign In
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              {loading ? "Signing in..." : "Sign In"}
+              {!loading && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
             </button>
           </form>
 
