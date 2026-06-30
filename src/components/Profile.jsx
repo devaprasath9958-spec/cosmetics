@@ -45,7 +45,32 @@ export default function Profile() {
         return;
       }
       
-      const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+      let { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+      
+      if (!profile) {
+        const newProfile = {
+          id: user.id,
+          name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Customer",
+          email: user.email,
+          avatar_url: user.user_metadata?.avatar_url || "/avatars/anime1.png",
+          joined_date: new Date().toISOString(),
+          membership: "Bronze Tier"
+        };
+        
+        const { data: upsertedProfile, error } = await supabase
+          .from("profiles")
+          .upsert(newProfile, { onConflict: 'id' })
+          .select()
+          .single();
+          
+        if (!error && upsertedProfile) {
+          profile = upsertedProfile;
+        } else {
+          profile = newProfile;
+          console.error("Failed to upsert profile:", error);
+        }
+      }
+
       if (profile) {
         setUserInfo(profile);
         setProfileForm(profile);
