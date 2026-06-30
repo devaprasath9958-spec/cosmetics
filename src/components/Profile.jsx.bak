@@ -20,10 +20,7 @@ export default function Profile() {
     label: "Shipping",
     name: "",
     address: "",
-    city: "",
-    state: "",
-    zipCode: "",
-    country: "",
+    cityStateZip: "",
     phone: ""
   });
 
@@ -60,39 +57,13 @@ export default function Profile() {
     fetchData();
   }, [navigate]);
 
-  const calculateCompletion = () => {
-    if (!userInfo) return 0;
-    let fields = 0;
-    let completed = 0;
-    const check = (val) => {
-      fields++;
-      if (val && val !== "") completed++;
-    };
-    check(userInfo.name);
-    check(userInfo.email);
-    check(userInfo.phone);
-    check(userInfo.dob);
-    check(userInfo.gender);
-    check(userInfo.avatar_url);
-    
-    // Check if at least 1 address exists
-    fields++;
-    if (addresses && addresses.length > 0) completed++;
-
-    return Math.round((completed / fields) * 100);
-  };
-  const completionPct = calculateCompletion();
-
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     const { data: { user } } = await supabase.auth.getUser();
     
     await supabase.from("profiles").update({
       name: profileForm.name,
-      phone: profileForm.phone,
-      dob: profileForm.dob,
-      gender: profileForm.gender,
-      avatar_url: profileForm.avatar_url
+      phone: profileForm.phone
     }).eq("id", user.id);
     
     setUserInfo({ ...userInfo, ...profileForm });
@@ -130,7 +101,7 @@ export default function Profile() {
     setAddresses(updated);
     setIsAddingAddress(false);
     setAddressForm({
-      label: "Shipping", name: "", address: "", city: "", state: "", zipCode: "", country: "", phone: ""
+      label: "Shipping", name: "", address: "", cityStateZip: "", phone: ""
     });
     
     const { data: { user } } = await supabase.auth.getUser();
@@ -192,51 +163,30 @@ export default function Profile() {
         <span className="text-[10px] text-smoke italic">{userInfo?.membership}</span>
       </div>
 
-      {/* Profile Welcome Header & Completion */}
+      {/* Profile Welcome Header */}
       <div className="relative mb-12 overflow-hidden rounded-3xl border border-obsidian-border bg-obsidian-light/40 p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="absolute right-0 top-0 -z-10 h-72 w-72 rounded-full bg-radial-fade blur-3xl opacity-60" />
         
-        <div className="flex flex-col md:flex-row items-center gap-6 w-full">
-          <div className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-gold to-rose-deep text-obsidian font-display text-3xl font-bold shadow-glow overflow-hidden">
-            {userInfo?.avatar_url ? (
-              <img src={userInfo.avatar_url} alt={userInfo.name} className="h-full w-full object-cover" />
-            ) : (
-              <span>{userInfo?.name?.split(" ").map(w => w[0]).join("")}</span>
-            )}
-            <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-obsidian border border-gold/30 text-[10px] text-gold z-10">
-              <Star size={12} className="fill-gold" />
+        <div className="flex items-center gap-5 flex-col md:flex-row text-center md:text-left">
+          <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-tr from-gold to-rose-deep text-obsidian font-display text-2xl font-bold shadow-glow">
+            {userInfo?.name?.split(" ").map(w => w[0]).join("")}
+            <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-obsidian border border-gold/30 text-[10px] text-gold">
+              <Star size={10} className="fill-gold" />
             </span>
           </div>
-          <div className="flex-1 w-full text-center md:text-left">
-            <h1 className="font-display text-2xl font-normal text-ivory tracking-wide flex items-center justify-center md:justify-start gap-2">
+          <div>
+            <h1 className="font-display text-2xl font-normal text-ivory tracking-wide flex items-center gap-2 justify-center md:justify-start">
               Welcome, {userInfo?.name}
             </h1>
             <p className="text-xs text-smoke mt-1 leading-relaxed">
               Member since {new Date(userInfo?.joined_date).toLocaleDateString()} &bull; <strong className="text-gold font-medium">{userInfo?.membership}</strong>
             </p>
-            
-            {/* Completion Bar */}
-            <div className="mt-4 max-w-sm">
-              <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-smoke mb-1.5">
-                <span>Profile Completion</span>
-                <span className={completionPct === 100 ? "text-gold font-bold" : ""}>{completionPct}%</span>
-              </div>
-              <div className="h-1.5 w-full bg-obsidian-soft rounded-full overflow-hidden">
-                <div 
-                  className={`h-full rounded-full transition-all duration-1000 ${completionPct === 100 ? 'bg-gold' : 'bg-rose/70'}`}
-                  style={{ width: `${completionPct}%` }}
-                />
-              </div>
-              {completionPct < 100 && (
-                <p className="text-[10px] text-rose/80 mt-1.5 italic">Complete your profile for a better shopping experience.</p>
-              )}
-            </div>
           </div>
         </div>
 
         <button
           onClick={handleSignOut}
-          className="shrink-0 flex items-center gap-2 rounded-full border border-obsidian-border bg-obsidian-light/50 px-5 py-2.5 text-xs text-smoke hover:border-rose/30 hover:text-rose transition-colors mt-4 md:mt-0"
+          className="flex items-center gap-2 rounded-full border border-obsidian-border bg-obsidian-light/50 px-5 py-2.5 text-xs text-smoke hover:border-rose/30 hover:text-rose transition-colors"
         >
           <LogOut size={13} />
           <span>Sign Out</span>
@@ -331,20 +281,6 @@ export default function Profile() {
                       className="w-full rounded-xl border border-obsidian-border bg-obsidian-border/40 px-4 py-3 text-sm text-smoke outline-none cursor-not-allowed"
                     />
                   </div>
-                  <div className="space-y-3 pb-2">
-                    <label className="text-[10px] uppercase tracking-wider text-gold font-medium block">Select Avatar</label>
-                    <div className="flex flex-wrap gap-3">
-                      {[1, 2, 3, 4, 5].map((num) => (
-                        <div 
-                          key={num}
-                          onClick={() => setProfileForm({ ...profileForm, avatar_url: `/avatars/anime${num}.png` })}
-                          className={`h-12 w-12 rounded-full overflow-hidden cursor-pointer border-2 transition-all ${profileForm.avatar_url === `/avatars/anime${num}.png` ? 'border-gold shadow-glow scale-110' : 'border-transparent opacity-50 hover:opacity-100'}`}
-                        >
-                          <img src={`/avatars/anime${num}.png`} alt={`Avatar ${num}`} className="w-full h-full object-cover" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                   <div className="space-y-1">
                     <label className="text-[10px] uppercase tracking-wider text-gold font-medium block">Phone Number</label>
                     <input
@@ -353,31 +289,6 @@ export default function Profile() {
                       onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
                       className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-3 text-sm text-ivory outline-none focus:border-gold/40"
                     />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-[10px] uppercase tracking-wider text-gold font-medium block">Date of Birth</label>
-                      <input
-                        type="date"
-                        value={profileForm.dob || ""}
-                        onChange={(e) => setProfileForm({ ...profileForm, dob: e.target.value })}
-                        className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-3 text-sm text-ivory outline-none focus:border-gold/40"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] uppercase tracking-wider text-gold font-medium block">Gender</label>
-                      <select
-                        value={profileForm.gender || ""}
-                        onChange={(e) => setProfileForm({ ...profileForm, gender: e.target.value })}
-                        className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-3 text-sm text-ivory outline-none focus:border-gold/40 appearance-none"
-                      >
-                        <option value="" disabled>Select</option>
-                        <option value="Female">Female</option>
-                        <option value="Male">Male</option>
-                        <option value="Other">Other</option>
-                        <option value="Prefer not to say">Prefer not to say</option>
-                      </select>
-                    </div>
                   </div>
                   <div className="flex gap-3 pt-2">
                     <button
@@ -409,14 +320,6 @@ export default function Profile() {
                   <div>
                     <span className="text-[10px] uppercase tracking-wider text-smoke/70 block">Phone Number</span>
                     <span className="text-sm font-medium text-ivory block mt-1">{userInfo?.phone || "Not provided"}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase tracking-wider text-smoke/70 block">Date of Birth</span>
-                    <span className="text-sm font-medium text-ivory block mt-1">{userInfo?.dob ? new Date(userInfo.dob).toLocaleDateString() : "Not provided"}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase tracking-wider text-smoke/70 block">Gender</span>
-                    <span className="text-sm font-medium text-ivory block mt-1">{userInfo?.gender || "Not provided"}</span>
                   </div>
                   <div>
                     <span className="text-[10px] uppercase tracking-wider text-smoke/70 block">VIP Status</span>
@@ -488,62 +391,27 @@ export default function Profile() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[10px] uppercase tracking-wider text-gold block">City</label>
+                      <label className="text-[10px] uppercase tracking-wider text-gold block">City, State, Zip</label>
                       <input
                         type="text"
                         required
-                        placeholder="New York"
-                        value={addressForm.city}
-                        onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
+                        placeholder="New York, NY 10001"
+                        value={addressForm.cityStateZip}
+                        onChange={(e) => setAddressForm({ ...addressForm, cityStateZip: e.target.value })}
                         className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold/40"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] uppercase tracking-wider text-gold block">State</label>
+                      <label className="text-[10px] uppercase tracking-wider text-gold block">Phone Number</label>
                       <input
-                        type="text"
+                        type="tel"
                         required
-                        placeholder="NY"
-                        value={addressForm.state}
-                        onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })}
+                        placeholder="+1 (555) 000-0000"
+                        value={addressForm.phone}
+                        onChange={(e) => setAddressForm({ ...addressForm, phone: e.target.value })}
                         className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold/40"
                       />
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-[10px] uppercase tracking-wider text-gold block">ZIP / Pincode</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="10001"
-                        value={addressForm.zipCode}
-                        onChange={(e) => setAddressForm({ ...addressForm, zipCode: e.target.value })}
-                        className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold/40"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] uppercase tracking-wider text-gold block">Country</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="USA"
-                        value={addressForm.country}
-                        onChange={(e) => setAddressForm({ ...addressForm, country: e.target.value })}
-                        className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold/40"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] uppercase tracking-wider text-gold block">Phone Number</label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="+1 (555) 000-0000"
-                      value={addressForm.phone}
-                      onChange={(e) => setAddressForm({ ...addressForm, phone: e.target.value })}
-                      className="w-full rounded-xl border border-obsidian-border bg-obsidian/40 px-4 py-2.5 text-xs text-ivory outline-none focus:border-gold/40"
-                    />
                   </div>
                   <div className="flex gap-3 pt-2">
                     <button
@@ -584,8 +452,7 @@ export default function Profile() {
                         </div>
                         <h4 className="text-sm font-semibold text-ivory mt-3">{addr.name}</h4>
                         <p className="text-xs text-smoke leading-relaxed mt-1.5">{addr.address}</p>
-                        <p className="text-xs text-smoke leading-relaxed">{addr.city}, {addr.state} {addr.zipCode}</p>
-                        <p className="text-xs text-smoke leading-relaxed">{addr.country}</p>
+                        <p className="text-xs text-smoke leading-relaxed">{addr.cityStateZip}</p>
                         <p className="text-xs text-smoke/70 mt-1 leading-none">Ph: {addr.phone}</p>
                       </div>
 

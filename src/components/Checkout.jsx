@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { CreditCard, Truck, ShieldCheck, MapPin, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { fetchCart, saveOrder, getAuthenticatedUser } from "../services/api";
+import { supabase } from "../supabaseClient";
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -34,6 +35,24 @@ export default function Checkout() {
         return;
       }
       setCart(cartItems);
+
+      // Pre-fill default address
+      const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+      if (profile && profile.addresses) {
+        const defaultAddr = profile.addresses.find(a => a.isDefault);
+        if (defaultAddr) {
+          const names = defaultAddr.name ? defaultAddr.name.split(" ") : ["", ""];
+          setFormData(prev => ({
+            ...prev,
+            firstName: names[0] || "",
+            lastName: names.slice(1).join(" ") || "",
+            address: defaultAddr.address || "",
+            city: defaultAddr.city || "",
+            zipCode: defaultAddr.zipCode || ""
+          }));
+        }
+      }
+
       setLoading(false);
     };
     initializeCheckout();
