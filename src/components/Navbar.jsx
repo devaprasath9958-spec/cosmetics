@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, Search, ShoppingBag, User, X, Heart, Moon, Sun } from "lucide-react";
+import { Menu, Search, ShoppingBag, User, X, Heart, Moon, Sun, ArrowRight } from "lucide-react";
 import ShadeSwatch from "./ui/ShadeSwatch.jsx";
 import { useTheme } from "../contexts/ThemeContext.jsx";
-import { fetchCart, fetchWishlist } from "../services/api.js";
+import { fetchCart, fetchWishlist, searchProducts } from "../services/api.js";
 
 const links = [
   { label: "Shop All", href: "/collections" },
@@ -24,6 +24,8 @@ export default function Navbar() {
   const [wishlistCount, setWishlistCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
   const { isDarkMode, toggleTheme } = useTheme();
 
   useEffect(() => {
@@ -31,6 +33,35 @@ export default function Navbar() {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest(".search-container") && !e.target.closest(".search-button")) {
+        setShowSearch(false);
+      }
+    };
+    if (showSearch) {
+      window.addEventListener("click", handleClickOutside);
+    }
+    return () => window.removeEventListener("click", handleClickOutside);
+  }, [showSearch]);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    const delayDebounceFn = setTimeout(async () => {
+      const results = await searchProducts(searchQuery);
+      setSearchResults(results);
+      setIsSearching(false);
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
 
   useEffect(() => {
     const updateCartCount = async () => {
@@ -103,24 +134,73 @@ export default function Navbar() {
             {isDarkMode ? <Sun size={19} /> : <Moon size={19} />}
           </button>
           
-          <div className="relative flex items-center">
+          <div className="relative flex items-center search-container">
             <button
-              onClick={() => setShowSearch(!showSearch)}
+              onClick={(e) => { e.stopPropagation(); setShowSearch(!showSearch); }}
               aria-label="Search"
-              className="text-ivory/80 transition-colors hover:text-gold z-10 relative"
+              className="search-button text-ivory/80 transition-colors hover:text-gold z-20 relative"
             >
               <Search size={19} />
             </button>
-            <div className={`absolute right-0 top-1/2 -translate-y-1/2 transition-all duration-300 ${showSearch ? 'opacity-100 translate-x-0 w-64' : 'opacity-0 translate-x-4 w-0 pointer-events-none'}`}>
+            <div className={`absolute right-0 top-1/2 -translate-y-1/2 transition-all duration-300 z-10 ${showSearch ? 'opacity-100 translate-x-0 w-80' : 'opacity-0 translate-x-4 w-0 pointer-events-none'}`}>
               <form onSubmit={(e) => { e.preventDefault(); navigate(`/collections?search=${encodeURIComponent(searchQuery.trim())}`); setShowSearch(false); }}>
                 <input 
                   type="text" 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search products..." 
-                  className="w-full bg-obsidian-soft border border-obsidian-border rounded-full py-2 pl-4 pr-10 text-sm text-ivory focus:outline-none focus:border-gold"
+                  className="w-full bg-obsidian-soft border border-obsidian-border rounded-full py-2 pl-4 pr-10 text-sm text-ivory focus:outline-none focus:border-gold shadow-lg"
                 />
               </form>
+              
+              {/* Autocomplete Dropdown */}
+              {showSearch && searchQuery.trim() && (
+                <div className="absolute top-full mt-3 right-0 w-80 bg-obsidian-light border border-obsidian-border rounded-xl shadow-card overflow-hidden z-50">
+                  {isSearching ? (
+                    <div className="p-4 text-center text-sm text-smoke">Searching...</div>
+                  ) : searchResults.length > 0 ? (
+                    <div className="max-h-[60vh] overflow-y-auto">
+                      {searchResults.map((product) => (
+                        <button
+                          key={product.id}
+                          onClick={() => {
+                            setShowSearch(false);
+                            setSearchQuery("");
+                            navigate(`/product/${product.id}`);
+                          }}
+                          className="flex items-center gap-3 w-full p-3 text-left hover:bg-obsidian-soft transition-colors border-b border-obsidian-border/50 last:border-0"
+                        >
+                          <div className="h-12 w-12 rounded-lg bg-obsidian-soft flex-shrink-0 flex items-center justify-center p-1 border border-obsidian-border overflow-hidden">
+                            {product.bottle ? (
+                              <img src={`/bottles/${product.bottle}.png`} alt={product.name} className="h-full object-contain drop-shadow-md" onError={(e) => e.target.style.display = 'none'} />
+                            ) : (
+                              <div className="h-4 w-4 rounded-full bg-gold/50" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-medium text-ivory truncate">{product.name}</h4>
+                            <p className="text-[10px] uppercase tracking-wider text-gold truncate mt-0.5">{product.category}</p>
+                          </div>
+                          <div className="text-sm font-display text-ivory">
+                            ${product.price}
+                          </div>
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => {
+                          setShowSearch(false);
+                          navigate(`/collections?search=${encodeURIComponent(searchQuery.trim())}`);
+                        }}
+                        className="w-full p-3 text-xs text-center text-gold hover:bg-gold/10 font-semibold uppercase tracking-wider transition-colors flex items-center justify-center gap-1 bg-obsidian-soft/50"
+                      >
+                        View all results <ArrowRight size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-sm text-smoke">No products found.</div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <button

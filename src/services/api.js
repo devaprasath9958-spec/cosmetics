@@ -158,6 +158,45 @@ export const fetchProducts = async (forceRefresh = false) => {
   }
 };
 
+export const searchProducts = async (query) => {
+  if (!query || query.trim() === '') return [];
+  try {
+    const searchTerm = `%${query.trim()}%`;
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .or(`name.ilike.${searchTerm},brand.ilike.${searchTerm},category.ilike.${searchTerm},tags.cs.{${query.trim()}}`)
+      .limit(8);
+      
+    if (error || !data) {
+      // Fallback: search without tags if tags array query fails
+      const { data: fallbackData } = await supabase
+        .from('products')
+        .select('*')
+        .or(`name.ilike.${searchTerm},brand.ilike.${searchTerm},category.ilike.${searchTerm}`)
+        .limit(8);
+      
+      if (fallbackData) {
+        return fallbackData.map((p) => ({
+          ...p,
+          colors: parseColors(p.colors),
+          oldPrice: p.old_price ?? p.oldPrice,
+        }));
+      }
+      return [];
+    }
+
+    return data.map((p) => ({
+      ...p,
+      colors: parseColors(p.colors),
+      oldPrice: p.old_price ?? p.oldPrice,
+    }));
+  } catch (e) {
+    console.error(e);
+    return [];
+  }
+};
+
 // --- Categories ---
 export const fetchCategories = async () => {
   try {
