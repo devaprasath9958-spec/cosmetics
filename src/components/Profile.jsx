@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { User, MapPin, Package, Shield, Edit3, Save, Trash2, Plus, Check, Star, LogOut, ArrowRight, Eye, Sparkles, ChevronDown } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { fetchOrders } from "../services/api.js";
+import DatePicker from "./ui/DatePicker.jsx";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -382,11 +383,9 @@ export default function Profile() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-[10px] uppercase tracking-wider text-gold font-medium block">Date of Birth</label>
-                      <input
-                        type="date"
-                        value={profileForm.dob || ""}
-                        onChange={(e) => setProfileForm({ ...profileForm, dob: e.target.value })}
-                        className="w-full rounded-xl border border-obsidian-border bg-obsidian-soft px-4 py-3 text-sm text-ivory outline-none focus:border-gold"
+                      <DatePicker
+                        value={profileForm.dob}
+                        onChange={(val) => setProfileForm({ ...profileForm, dob: val })}
                       />
                     </div>
                     <div className="space-y-1">
