@@ -160,39 +160,52 @@ export const fetchProducts = async (forceRefresh = false) => {
 
 export const searchProducts = async (query) => {
   if (!query || query.trim() === '') return [];
+
+  // Normalize: lowercase and collapse whitespace
+  const normalise = (str) =>
+    (str || '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+  const normQuery = normalise(query);
+
   try {
-    const searchTerm = `%${query.trim()}%`;
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .or(`name.ilike.${searchTerm},brand.ilike.${searchTerm},category.ilike.${searchTerm},tags.cs.{${query.trim()}}`)
-      .limit(8);
-      
-    if (error || !data) {
-      // Fallback: search without tags if tags array query fails
-      const { data: fallbackData } = await supabase
+    // Re-use the cache populated by fetchProducts when available,
+    // otherwise fetch fresh from Supabase so new products are always searchable.
+    const all = await fetchProducts();
+
+    const matched = all.filter((p) => {
+      const name     = normalise(p.name);
+      const brand    = normalise(p.brand);
+      const category = normalise(p.category);
+      const subtitle = normalise(p.subtitle);
+      return (
+        name.includes(normQuery) ||
+        brand.includes(normQuery) ||
+        category.includes(normQuery) ||
+        subtitle.includes(normQuery)
+      );
+    });
+
+    return matched.slice(0, 8);
+  } catch (e) {
+    // Hard fallback: direct Supabase ilike query (name only, no tags)
+    try {
+      const searchTerm = `%${normQuery}%`;
+      const { data } = await supabase
         .from('products')
         .select('*')
-        .or(`name.ilike.${searchTerm},brand.ilike.${searchTerm},category.ilike.${searchTerm}`)
+        .ilike('name', searchTerm)
         .limit(8);
-      
-      if (fallbackData) {
-        return fallbackData.map((p) => ({
+
+      if (data) {
+        return data.map((p) => ({
           ...p,
           colors: parseColors(p.colors),
           oldPrice: p.old_price ?? p.oldPrice,
         }));
       }
-      return [];
+    } catch (_) {
+      // ignore secondary error
     }
-
-    return data.map((p) => ({
-      ...p,
-      colors: parseColors(p.colors),
-      oldPrice: p.old_price ?? p.oldPrice,
-    }));
-  } catch (e) {
-    console.error(e);
     return [];
   }
 };

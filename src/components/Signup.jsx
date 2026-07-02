@@ -1,45 +1,47 @@
 import React, { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Mail, Lock, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Mail, Lock, User, ArrowRight } from "lucide-react";
 import { supabase } from "../supabaseClient";
-import { useAdminAuth } from "../contexts/AdminAuthContext.jsx";
-import { ADMIN_CREDENTIALS } from "../data/adminSeed.js";
+import { useAuth } from "../contexts/AuthContext";
 
-export default function Login() {
+export default function Signup() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const { showToast } = useAuth();
+  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  const { login: adminLogin } = useAdminAuth();
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
 
-    // Automatic Admin Login Detection
-    if (formData.email.trim().toLowerCase() === ADMIN_CREDENTIALS.email.toLowerCase()) {
-      const adminResult = adminLogin(formData.email, formData.password);
-      setLoading(false);
-      if (adminResult.success) {
-        navigate("/admin", { replace: true });
-      } else {
-        setError(adminResult.error);
-      }
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters.");
       return;
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    setLoading(true);
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
+      options: {
+        data: {
+          name: formData.name,
+          full_name: formData.name,
+        },
+      },
     });
+
     setLoading(false);
-    if (error) {
-      setError(error.message);
+    if (signUpError) {
+      setError(signUpError.message);
+    } else if (data?.user && !data?.session) {
+      setSuccess(true);
+      if (showToast) showToast("Sign up successful! Please check your email.");
     } else {
-      navigate("/", { replace: true });
+      if (showToast) showToast("Welcome to Lumé Cosmetics!");
+      navigate("/");
     }
   };
 
@@ -51,8 +53,8 @@ export default function Login() {
 
         <div className="relative z-10">
           <div className="text-center mb-8">
-            <h1 className="font-display text-3xl mb-2 text-ivory">Welcome Back</h1>
-            <p className="text-smoke text-sm">Sign in to access your Lumé account.</p>
+            <h1 className="font-display text-3xl mb-2 text-ivory">Create Account</h1>
+            <p className="text-smoke text-sm">Join Lumé to enjoy exclusive benefits.</p>
           </div>
 
           {error && (
@@ -61,7 +63,35 @@ export default function Login() {
             </div>
           )}
 
+          {success && (
+            <div className="mb-4 p-4 bg-gold/10 border border-gold/30 text-gold text-sm rounded-lg text-center">
+              <p className="font-semibold mb-1">Account created! 🎉</p>
+              <p className="text-xs text-smoke">
+                Check your email inbox and click the confirmation link, then{" "}
+                <Link to="/login" className="text-gold underline">
+                  sign in here
+                </Link>
+                .
+              </p>
+            </div>
+          )}
+
           <form className="space-y-5" onSubmit={handleSubmit}>
+            <div>
+              <label className="block text-sm font-medium mb-2 text-ivory">Name</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full bg-obsidian-soft border border-obsidian-border rounded-lg pl-10 pr-4 py-3 text-ivory focus:outline-none focus:border-gold transition-colors"
+                  placeholder="John Doe"
+                />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-smoke w-5 h-5" />
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium mb-2 text-ivory">Email</label>
               <div className="relative">
@@ -78,12 +108,7 @@ export default function Login() {
             </div>
 
             <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-medium text-ivory">Password</label>
-                <Link to="#" className="text-xs text-gold hover:text-gold-light transition-colors">
-                  Forgot Password?
-                </Link>
-              </div>
+              <label className="block text-sm font-medium mb-2 text-ivory">Password</label>
               <div className="relative">
                 <input
                   type="password"
@@ -102,15 +127,15 @@ export default function Login() {
               disabled={loading}
               className="w-full bg-gold hover:bg-gold-light text-obsidian font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 group disabled:opacity-70"
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? "Creating..." : "Sign Up"}
               {!loading && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
             </button>
           </form>
 
           <p className="mt-8 text-center text-sm text-smoke">
-            Don't have an account?{" "}
-            <Link to="/signup" className="text-gold hover:text-gold-light font-medium transition-colors">
-              Create an Account
+            Already have an account?{" "}
+            <Link to="/login" className="text-gold hover:text-gold-light font-medium transition-colors">
+              Sign In
             </Link>
           </p>
         </div>

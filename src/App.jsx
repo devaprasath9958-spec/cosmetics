@@ -29,6 +29,7 @@ import WhatsAppButton from "./components/ui/WhatsAppButton.jsx";
 import InstagramGallery from "./components/InstagramGallery.jsx";
 import Login from "./components/Login.jsx";
 import Register from "./components/Register.jsx";
+import Signup from "./components/Signup.jsx";
 import Checkout from "./components/Checkout.jsx";
 import OrderTracking from "./components/OrderTracking.jsx";
 import FAQ from "./components/FAQ.jsx";
@@ -122,7 +123,8 @@ function AppRoutes() {
         <Route path="/contact" element={<StorefrontShell><Contact /></StorefrontShell>} />
         <Route path="/wishlist" element={<StorefrontShell><Wishlist /></StorefrontShell>} />
         <Route path="/login" element={<StorefrontShell><Login /></StorefrontShell>} />
-        <Route path="/register" element={<StorefrontShell><Register /></StorefrontShell>} />
+        <Route path="/signup" element={<StorefrontShell><Signup /></StorefrontShell>} />
+        <Route path="/register" element={<StorefrontShell><Signup /></StorefrontShell>} />
         <Route path="/checkout" element={<StorefrontShell><Checkout /></StorefrontShell>} />
         <Route path="/track-order" element={<StorefrontShell><OrderTracking /></StorefrontShell>} />
         <Route path="/faq" element={<StorefrontShell><FAQ /></StorefrontShell>} />

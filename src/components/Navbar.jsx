@@ -4,6 +4,8 @@ import { Menu, Search, ShoppingBag, User, X, Heart, Moon, Sun, ArrowRight } from
 import ShadeSwatch from "./ui/ShadeSwatch.jsx";
 import { useTheme } from "../contexts/ThemeContext.jsx";
 import { fetchCart, fetchWishlist, searchProducts } from "../services/api.js";
+import { useAuth } from "../contexts/AuthContext.jsx";
+import { supabase } from "../supabaseClient.js";
 
 const links = [
   { label: "Shop All", href: "/collections" },
@@ -28,6 +30,8 @@ export default function Navbar() {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const { isDarkMode, toggleTheme } = useTheme();
+  const { user } = useAuth();
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -46,6 +50,18 @@ export default function Navbar() {
     }
     return () => window.removeEventListener("click", handleClickOutside);
   }, [showSearch]);
+
+  useEffect(() => {
+    const handleClickOutsideUser = (e) => {
+      if (!e.target.closest(".user-dropdown-container")) {
+        setShowUserDropdown(false);
+      }
+    };
+    if (showUserDropdown) {
+      window.addEventListener("click", handleClickOutsideUser);
+    }
+    return () => window.removeEventListener("click", handleClickOutsideUser);
+  }, [showUserDropdown]);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -70,10 +86,14 @@ export default function Navbar() {
     e.preventDefault();
     if (!searchQuery.trim()) return;
 
+    const normQ = searchQuery.toLowerCase().replace(/\s+/g, ' ').trim();
+
     if (selectedIndex >= 0 && searchResults[selectedIndex]) {
       navigate(`/product/${searchResults[selectedIndex].id}`);
     } else {
-      const exactMatches = searchResults.filter(p => p.name.toLowerCase() === searchQuery.trim().toLowerCase());
+      const exactMatches = searchResults.filter(
+        (p) => (p.name || '').toLowerCase().replace(/\s+/g, ' ').trim() === normQ
+      );
       if (exactMatches.length === 1) {
         navigate(`/product/${exactMatches[0].id}`);
       } else if (searchResults.length === 1) {
@@ -240,13 +260,62 @@ export default function Navbar() {
               )}
             </div>
           </div>
-          <button
-            onClick={() => navigate("/profile")}
-            aria-label="Account"
-            className="text-ivory/80 transition-colors hover:text-gold"
-          >
-            <User size={19} />
-          </button>
+          {user ? (
+            <div className="relative user-dropdown-container">
+              <button
+                onClick={() => setShowUserDropdown(!showUserDropdown)}
+                className="flex items-center gap-2 text-ivory/80 hover:text-gold transition-colors focus:outline-none py-1"
+              >
+                <User size={19} />
+                <span className="text-sm font-medium hidden md:inline truncate max-w-[120px]">
+                  {user.user_metadata?.name || user.user_metadata?.full_name || user.email.split('@')[0]}
+                </span>
+              </button>
+              
+              {showUserDropdown && (
+                <div className="absolute right-0 mt-2 w-48 bg-obsidian-light border border-obsidian-border rounded-xl shadow-card py-2 z-50">
+                  <div className="px-4 py-2 border-b border-obsidian-border/50">
+                    <p className="text-[10px] text-smoke uppercase tracking-wider font-semibold">Signed in as</p>
+                    <p className="text-sm text-ivory font-medium truncate mt-0.5">
+                      {user.user_metadata?.name || user.user_metadata?.full_name || user.email}
+                    </p>
+                  </div>
+                  <Link
+                    to="/profile"
+                    onClick={() => setShowUserDropdown(false)}
+                    className="flex w-full items-center px-4 py-2 text-sm text-ivory/80 hover:text-gold hover:bg-obsidian-soft transition-colors"
+                  >
+                    Profile
+                  </Link>
+                  <button
+                    onClick={async () => {
+                      setShowUserDropdown(false);
+                      await supabase.auth.signOut();
+                      navigate("/");
+                    }}
+                    className="flex w-full items-center px-4 py-2 text-sm text-rose hover:bg-rose/10 transition-colors border-t border-obsidian-border/30 mt-1"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-4">
+              <Link
+                to="/login"
+                className="text-sm font-medium text-ivory/80 transition-colors hover:text-gold"
+              >
+                Login
+              </Link>
+              <Link
+                to="/signup"
+                className="text-sm font-medium bg-gold hover:bg-gold-light text-obsidian px-4 py-1.5 rounded-full transition-colors"
+              >
+                Sign Up
+              </Link>
+            </div>
+          )}
           <button
             onClick={() => navigate("/wishlist")}
             aria-label={`Wishlist, ${wishlistCount} items`}
@@ -296,6 +365,57 @@ export default function Navbar() {
                 </Link>
               </li>
             ))}
+            {!user ? (
+              <>
+                <li className="border-t border-obsidian-border/55 pt-4">
+                  <Link
+                    to="/login"
+                    onClick={() => setOpen(false)}
+                    className="text-base font-medium text-ivory/85 transition-colors hover:text-gold"
+                  >
+                    Login
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/signup"
+                    onClick={() => setOpen(false)}
+                    className="text-base font-medium text-gold transition-colors hover:text-gold-light"
+                  >
+                    Sign Up
+                  </Link>
+                </li>
+              </>
+            ) : (
+              <>
+                <li className="border-t border-obsidian-border/55 pt-4">
+                  <div className="text-xs text-smoke font-medium">
+                    Signed in as <span className="text-ivory font-semibold">{user.user_metadata?.name || user.user_metadata?.full_name || user.email.split('@')[0]}</span>
+                  </div>
+                </li>
+                <li>
+                  <Link
+                    to="/profile"
+                    onClick={() => setOpen(false)}
+                    className="text-base font-medium text-ivory/85 transition-colors hover:text-gold"
+                  >
+                    Profile
+                  </Link>
+                </li>
+                <li>
+                  <button
+                    onClick={async () => {
+                      setOpen(false);
+                      await supabase.auth.signOut();
+                      navigate("/");
+                    }}
+                    className="text-base font-medium text-rose transition-colors hover:text-rose-light text-left w-full"
+                  >
+                    Logout
+                  </button>
+                </li>
+              </>
+            )}
           </ul>
           <div className="mt-6 flex items-center justify-between border-t border-obsidian-border pt-6">
             <button
@@ -318,7 +438,7 @@ export default function Navbar() {
             <button
               onClick={() => {
                 setOpen(false);
-                navigate("/profile");
+                navigate(user ? "/profile" : "/login");
               }}
               aria-label="Account"
               className="text-ivory/80 hover:text-gold"
