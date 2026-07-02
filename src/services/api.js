@@ -283,10 +283,11 @@ export const submitReview = async ({ productId, rating, review, userName }) => {
     const { data, error } = await supabase
       .from('reviews')
       .insert({
+        user_id: user.id,
         product_id: productId,
         rating,
         review,
-        user_name: userName || user.email?.split('@')[0] || 'Customer',
+        user_name: userName || user.user_metadata?.name || user.email?.split('@')[0] || 'Customer',
       })
       .select()
       .single();
