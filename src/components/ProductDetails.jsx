@@ -582,7 +582,7 @@ export default function ProductDetails() {
 
       {/* Related Products ("Complete the Ritual") */}
       {relatedProducts.length > 0 && (
-        <RelatedProducts />
+        <RelatedProducts products={relatedProducts} />
       )}
 
       {/* Reviews list */}

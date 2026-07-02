@@ -62,7 +62,24 @@ export default function Checkout() {
   const shippingCost = formData.deliveryMethod === "Express" ? 15 : 0;
   const total = subtotal + shippingCost;
 
+  const [formError, setFormError] = useState("");
+
   const handlePlaceOrder = async () => {
+    // Validate all required fields before submitting
+    const { firstName, lastName, address, city, zipCode, cardNumber, expiry, cvc } = formData;
+    if (!firstName.trim() || !lastName.trim() || !address.trim() || !city.trim() || !zipCode.trim()) {
+      setFormError("Please fill in all shipping address fields.");
+      return;
+    }
+    if (!cardNumber.trim() || !expiry.trim() || !cvc.trim()) {
+      setFormError("Please fill in all payment details.");
+      return;
+    }
+    if (cardNumber.replace(/\s/g, "").length < 12) {
+      setFormError("Please enter a valid card number.");
+      return;
+    }
+    setFormError("");
     setPlacingOrder(true);
     const orderData = {
       status: "Processing",
@@ -71,8 +88,8 @@ export default function Checkout() {
       shippingCost,
       taxCost: 0,
       subtotal,
-      paymentMethod: "Credit Card ending in " + formData.cardNumber.slice(-4),
-      shippingAddress: `${formData.firstName} ${formData.lastName}, ${formData.address}, ${formData.city} ${formData.zipCode}`,
+      paymentMethod: "Credit Card ending in " + cardNumber.replace(/\s/g, "").slice(-4),
+      shippingAddress: `${firstName.trim()} ${lastName.trim()}, ${address.trim()}, ${city.trim()} ${zipCode.trim()}`,
       carrier: formData.deliveryMethod === "Express" ? "FedEx" : "USPS",
       timeline: [
         { status: "Order Placed", date: new Date().toISOString(), completed: true },
@@ -87,7 +104,7 @@ export default function Checkout() {
       navigate("/orders");
     } else {
       setPlacingOrder(false);
-      alert("Failed to place order.");
+      setFormError("Failed to place order. Please try again.");
     }
   };
 
@@ -255,6 +272,11 @@ export default function Checkout() {
               </div>
             </div>
 
+            {formError && (
+              <div className="mb-4 p-3 bg-rose-deep/20 border border-rose/30 text-rose text-sm rounded-lg text-center">
+                {formError}
+              </div>
+            )}
             <button 
               onClick={handlePlaceOrder}
               disabled={placingOrder}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import SectionHeading from "./ui/SectionHeading.jsx";
 import ProductCard from "./ui/ProductCard.jsx";
 import Button from "./ui/Button.jsx";
@@ -22,6 +23,7 @@ const item = {
 };
 
 export default function Products() {
+  const navigate = useNavigate();
   const [active, setActive] = useState("All");
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -120,7 +122,7 @@ export default function Products() {
         transition={{ delay: 0.4, duration: 0.6 }}
         className="mt-12 flex justify-center"
       >
-        <Button variant="outline" className="group border-ivory/20 hover:border-ivory">
+        <Button variant="outline" className="group border-ivory/20 hover:border-ivory" onClick={() => navigate("/collections")}>
           View Full Catalog <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
         </Button>
       </motion.div>
