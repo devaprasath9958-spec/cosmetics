@@ -1,11 +1,8 @@
-import { useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
-import { supabase } from "./supabaseClient.js";
 import { AuthProvider } from "./contexts/AuthContext.jsx";
 import { AdminAuthProvider } from "./contexts/AdminAuthContext.jsx";
 import { AdminDataProvider } from "./contexts/AdminDataContext.jsx";
 import { ReactLenis } from "@studio-freight/react-lenis";
-import { AnimatePresence } from "framer-motion";
 import Navbar from "./components/Navbar.jsx";
 import Hero from "./components/Hero.jsx";
 import Trending from "./components/Trending.jsx";
@@ -53,6 +50,7 @@ import AdminBlog from "./components/admin/AdminBlog.jsx";
 import AdminNewsletter from "./components/admin/AdminNewsletter.jsx";
 import AdminMessages from "./components/admin/AdminMessages.jsx";
 import CustomCursor from "./components/CustomCursor.jsx";
+import ProtectedRoute from "./components/ui/ProtectedRoute.jsx";
 
 function StorefrontShell({ children }) {
   return (
@@ -116,16 +114,16 @@ function AppRoutes() {
         <Route path="/collections" element={<StorefrontShell><Collections /></StorefrontShell>} />
         <Route path="/custom-beauty" element={<StorefrontShell><CustomBeauty /></StorefrontShell>} />
         <Route path="/product/:id" element={<StorefrontShell><ProductDetails /></StorefrontShell>} />
-        <Route path="/orders" element={<StorefrontShell><Orders /></StorefrontShell>} />
-        <Route path="/cart" element={<StorefrontShell><Cart /></StorefrontShell>} />
-        <Route path="/profile" element={<StorefrontShell><Profile /></StorefrontShell>} />
+        <Route path="/orders" element={<StorefrontShell><ProtectedRoute><Orders /></ProtectedRoute></StorefrontShell>} />
+        <Route path="/cart" element={<StorefrontShell><ProtectedRoute><Cart /></ProtectedRoute></StorefrontShell>} />
+        <Route path="/profile" element={<StorefrontShell><ProtectedRoute><Profile /></ProtectedRoute></StorefrontShell>} />
         <Route path="/about" element={<StorefrontShell><About /></StorefrontShell>} />
         <Route path="/contact" element={<StorefrontShell><Contact /></StorefrontShell>} />
-        <Route path="/wishlist" element={<StorefrontShell><Wishlist /></StorefrontShell>} />
+        <Route path="/wishlist" element={<StorefrontShell><ProtectedRoute><Wishlist /></ProtectedRoute></StorefrontShell>} />
         <Route path="/login" element={<StorefrontShell><Login /></StorefrontShell>} />
         <Route path="/signup" element={<StorefrontShell><Signup /></StorefrontShell>} />
         <Route path="/register" element={<StorefrontShell><Signup /></StorefrontShell>} />
-        <Route path="/checkout" element={<StorefrontShell><Checkout /></StorefrontShell>} />
+        <Route path="/checkout" element={<StorefrontShell><ProtectedRoute><Checkout /></ProtectedRoute></StorefrontShell>} />
         <Route path="/track-order" element={<StorefrontShell><OrderTracking /></StorefrontShell>} />
         <Route path="/faq" element={<StorefrontShell><FAQ /></StorefrontShell>} />
         <Route path="/blog" element={<StorefrontShell><Blog /></StorefrontShell>} />
@@ -138,11 +136,6 @@ function AppRoutes() {
 }
 
 export default function App() {
-  useEffect(() => {
-    supabase.from('products').select('*').limit(1).then(({data}) => {
-      console.log('Product schema:', data ? Object.keys(data[0] || {}) : 'no data');
-    });
-  }, []);
 
   return (
     <ReactLenis root>
