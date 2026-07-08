@@ -114,11 +114,16 @@ const mapReviewRow = (row) => ({
 
 // --- Auth Helpers ---
 export const getAuthenticatedUser = async () => {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session?.user) return session.user;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) return session.user;
 
-  const { data: { user } } = await supabase.auth.getUser();
-  return user;
+    const { data: { user } } = await supabase.auth.getUser();
+    return user ?? null;
+  } catch (e) {
+    console.error('[getAuthenticatedUser] Failed to retrieve session:', e);
+    return null;
+  }
 };
 
 // --- Products ---
@@ -430,8 +435,14 @@ export const updateCartItem = async (product, quantity) => {
 
     return { success: true };
   } catch (e) {
-    console.error('Cart update error:', e);
-    return { success: false, error: e.message };
+    console.error('[updateCartItem] Error details:', {
+      message: e?.message,
+      code:    e?.code,
+      details: e?.details,
+      hint:    e?.hint,
+      full:    e,
+    });
+    return { success: false, error: e?.message || 'Unknown cart error' };
   }
 };
 

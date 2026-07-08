@@ -4,8 +4,9 @@ import { Heart, ShoppingBag, Check, Eye } from "lucide-react";
 import BottleIllustration from "./BottleIllustration.jsx";
 import StarRating from "./StarRating.jsx";
 import QuickViewModal from "./QuickViewModal.jsx";
-import { fetchWishlist, toggleWishlist, fetchCart, updateCartItem } from "../../services/api.js";
+import { fetchWishlist, toggleWishlist } from "../../services/api.js";
 import { useAuth } from "../../contexts/AuthContext.jsx";
+import { useCartActions } from "../../hooks/useCartActions.js";
 
 const badgeStyles = {
   Bestseller: "bg-gold/15 text-gold border-gold/30",
@@ -20,9 +21,12 @@ export default function ProductCard({ product }) {
     product;
 
   const [saved, setSaved] = useState(false);
-  const [added, setAdded] = useState(false);
   const [showQuickView, setShowQuickView] = useState(false);
   const { requireAuth } = useAuth();
+  const { addToCart, isAdding, isAdded } = useCartActions();
+
+  const adding = isAdding(id);
+  const added  = isAdded(id);
 
   useEffect(() => {
     const checkSaved = async () => {
@@ -59,24 +63,7 @@ export default function ProductCard({ product }) {
 
   const handleAdd = async (e) => {
     e.stopPropagation();
-    if (!requireAuth("Please sign in to add items to your cart.")) return;
-
-    try {
-      const cart = await fetchCart();
-      const existingItem = cart.find(
-        (item) => item.id === id && item.selectedShadeIndex === 0
-      );
-      const newQty = existingItem ? existingItem.qty + 1 : 1;
-      const result = await updateCartItem(product, newQty);
-
-      if (result?.success !== false) {
-        window.dispatchEvent(new Event("cart-updated"));
-        setAdded(true);
-        setTimeout(() => setAdded(false), 2000);
-      }
-    } catch (err) {
-      console.error("Failed to add to cart:", err);
-    }
+    await addToCart(product);
   };
 
   return (
@@ -150,9 +137,12 @@ export default function ProductCard({ product }) {
 
         <button
           onClick={handleAdd}
-          className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold opacity-100 transition-all duration-300 sm:opacity-0 sm:group-hover:opacity-100 ${
+          disabled={adding}
+          className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold opacity-100 transition-all duration-300 sm:opacity-0 sm:group-hover:opacity-100 disabled:cursor-not-allowed ${
             added
-              ? "bg-rose-deep text-rose border border-rose/30"
+              ? "bg-gold/20 text-gold border border-gold/30"
+              : adding
+              ? "bg-ivory/5 text-smoke"
               : "bg-ivory/5 text-ivory hover:bg-gold hover:text-obsidian"
           }`}
           aria-label={`Add ${name} to bag`}
@@ -160,8 +150,10 @@ export default function ProductCard({ product }) {
           {added ? (
             <>
               <Check size={14} />
-              Added
+              Added!
             </>
+          ) : adding ? (
+            "Adding..."
           ) : (
             <>
               <ShoppingBag size={14} />

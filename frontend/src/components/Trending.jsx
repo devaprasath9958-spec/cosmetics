@@ -2,15 +2,15 @@ import { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import Button from "./ui/Button.jsx";
 import { ArrowRight, Sparkles, Check } from "lucide-react";
-import { fetchProducts, fetchCart, updateCartItem } from "../services/api.js";
-import { useAuth } from "../contexts/AuthContext.jsx";
+import { fetchProducts } from "../services/api.js";
+import { useCartActions } from "../hooks/useCartActions.js";
 
 export default function Trending() {
   const containerRef = useRef(null);
   const [product, setProduct] = useState(null);
-  const [added, setAdded] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const { requireAuth } = useAuth();
+  const { addToCart, isAdding, isAdded } = useCartActions();
+  const adding = product ? isAdding(product.id) : false;
+  const added  = product ? isAdded(product.id)  : false;
   
   useEffect(() => {
     const loadProduct = async () => {
@@ -28,28 +28,8 @@ export default function Trending() {
   }, []);
 
   const handleAdd = async () => {
-    if (!product || loading) return;
-    if (!requireAuth("Please sign in to add items to your cart.")) return;
-    
-    setLoading(true);
-    try {
-      const cart = await fetchCart();
-      const existingItem = cart.find(
-        (item) => item.id === product.id && item.selectedShadeIndex === 0
-      );
-      const newQty = existingItem ? existingItem.qty + 1 : 1;
-      const result = await updateCartItem(product, newQty);
-
-      if (result?.success !== false) {
-        window.dispatchEvent(new Event("cart-updated"));
-        setAdded(true);
-        setTimeout(() => setAdded(false), 2000);
-      }
-    } catch (err) {
-      console.error("Failed to add trending to cart:", err);
-    } finally {
-      setLoading(false);
-    }
+    if (!product || adding) return;
+    await addToCart(product);
   };
 
   const { scrollYProgress } = useScroll({
@@ -152,13 +132,13 @@ export default function Trending() {
                       : "shadow-gold/20 hover:shadow-gold/40"
                   }`}
                   onClick={handleAdd}
-                  disabled={!product || loading}
+                  disabled={!product || adding}
                 >
                   {added ? (
                     <>
                       Added to Cart <Check size={16} className="ml-2" />
                     </>
-                  ) : loading ? (
+                  ) : adding ? (
                     "Adding..."
                   ) : (
                     <>

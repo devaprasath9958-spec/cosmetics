@@ -132,7 +132,7 @@ export default function Navbar() {
     return () => {
       window.removeEventListener("cart-updated", updateCartCount);
     };
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const updateWishlistCount = async () => {
@@ -148,7 +148,7 @@ export default function Navbar() {
     return () => {
       window.removeEventListener("wishlist-updated", updateWishlistCount);
     };
-  }, []);
+  }, [user]);
 
   return (
     <header

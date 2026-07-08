@@ -2,12 +2,13 @@ import { useState, useMemo, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Heart, ShoppingBag, Star, ArrowLeft, Plus, Minus, Check, ChevronDown, Sparkles } from "lucide-react";
 import { products as fallbackProducts } from "../data/products.js";
-import { fetchProducts, fetchCart, updateCartItem, fetchWishlist, toggleWishlist, fetchProductReviews } from "../services/api.js";
+import { fetchProducts, fetchWishlist, toggleWishlist, fetchProductReviews } from "../services/api.js";
 import BottleIllustration from "./ui/BottleIllustration.jsx";
 import ProductCard from "./ui/ProductCard.jsx";
 import StarRating from "./ui/StarRating.jsx";
 import RelatedProducts from "./RelatedProducts.jsx";
 import { useAuth } from "../contexts/AuthContext.jsx";
+import { useCartActions } from "../hooks/useCartActions.js";
 
 // Extended product information mapping to keep data files clean and supply rich details.
 const PRODUCT_INFO_EXTENSIONS = {
@@ -168,8 +169,10 @@ export default function ProductDetails() {
       console.error("Failed to update wishlist:", err);
     }
   };
-  const [isAdding, setIsAdding] = useState(false);
-  const [addedSuccess, setAddedSuccess] = useState(false);
+  const { addToCart, isAdding, isAdded } = useCartActions();
+
+  const isAdding_ = product ? isAdding(product.id) : false;
+  const addedSuccess = product ? isAdded(product.id) : false;
 
   // Color selection (Shade selector)
   const [selectedShadeIndex, setSelectedShadeIndex] = useState(0);
@@ -179,8 +182,6 @@ export default function ProductDetails() {
     setSelectedShadeIndex(0);
     setQuantity(1);
     setActiveGalleryView("bottle");
-    setAddedSuccess(false);
-    setIsAdding(false);
   }, [id]);
 
   const activeColors = useMemo(() => {
@@ -220,43 +221,9 @@ export default function ProductDetails() {
     });
   }, [product?.id]);
 
-  const handleAddToCart = () => {
-    if (!requireAuth("Please sign in to add items to your cart.")) return;
-    setIsAdding(true);
-    
-    setTimeout(async () => {
-      try {
-        const cart = await fetchCart();
-        const existingItemIdx = cart.findIndex(
-          (item) => item.id === product.id && item.selectedShadeIndex === selectedShadeIndex
-        );
-        
-        const customProduct = {
-          id: product.id,
-          name: product.name,
-          subtitle: product.subtitle,
-          price: product.price,
-          qty: quantity,
-          bottle: product.bottle || "bottle",
-          colors: product.colors || ["#C9A769", "#8B3A4B"],
-          selectedShadeIndex: selectedShadeIndex
-        };
-
-        if (existingItemIdx > -1) {
-          await updateCartItem(customProduct, cart[existingItemIdx].qty + quantity);
-        } else {
-          await updateCartItem(customProduct, quantity);
-        }
-        
-        window.dispatchEvent(new Event("cart-updated"));
-      } catch (e) {
-        console.error("Failed to add to cart:", e);
-      }
-      
-      setIsAdding(false);
-      setAddedSuccess(true);
-      setTimeout(() => setAddedSuccess(false), 2500);
-    }, 1200);
+  const handleAddToCart = async () => {
+    if (!product) return;
+    await addToCart(product, quantity);
   };
 
   const formattedCategoryLabel = (cat) => {
@@ -512,14 +479,14 @@ export default function ProductDetails() {
               {/* Add to bag button */}
               <button
                 onClick={handleAddToCart}
-                disabled={isAdding}
+                disabled={isAdding_}
                 className={`group relative flex w-full items-center justify-center gap-2 rounded-full py-4 text-sm font-semibold transition-all duration-300 shadow-glow ${
                   addedSuccess
-                    ? "bg-rose-deep text-rose border border-rose/30"
+                    ? "bg-gold/20 text-gold border border-gold/30"
                     : "bg-gold text-obsidian hover:bg-gold-light"
                 }`}
               >
-                {isAdding ? (
+                {isAdding_ ? (
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-obsidian border-t-transparent" />
                 ) : addedSuccess ? (
                   <>

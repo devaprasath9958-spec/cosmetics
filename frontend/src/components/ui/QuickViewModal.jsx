@@ -1,36 +1,20 @@
-import React, { useState } from "react";
+import React from "react";
 import { X, ShoppingBag, Star, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { fetchCart, updateCartItem } from "../../services/api.js";
-import { useAuth } from "../../contexts/AuthContext.jsx";
+import { useCartActions } from "../../hooks/useCartActions.js";
 
 export default function QuickViewModal({ product, onClose }) {
   const navigate = useNavigate();
-  const { requireAuth } = useAuth();
-  const [adding, setAdding] = useState(false);
-  const [added, setAdded] = useState(false);
+  const { addToCart, isAdding, isAdded } = useCartActions();
 
   if (!product) return null;
 
+  const adding = isAdding(product.id);
+  const added  = isAdded(product.id);
+
   const handleAddToCart = async (e) => {
     e.stopPropagation();
-    if (!requireAuth("Please sign in to add items to your cart.")) return;
-    setAdding(true);
-    try {
-      const cart = await fetchCart();
-      const existing = cart.find((i) => i.id === product.id);
-      const newQty = existing ? existing.qty + 1 : 1;
-      const result = await updateCartItem(product, newQty);
-      if (result?.success !== false) {
-        window.dispatchEvent(new Event("cart-updated"));
-        setAdded(true);
-        setTimeout(() => setAdded(false), 2000);
-      }
-    } catch (err) {
-      console.error("QuickView add to cart error:", err);
-    } finally {
-      setAdding(false);
-    }
+    await addToCart(product);
   };
 
   const handleViewDetails = (e) => {

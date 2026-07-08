@@ -51,6 +51,7 @@ import AdminNewsletter from "./components/admin/AdminNewsletter.jsx";
 import AdminMessages from "./components/admin/AdminMessages.jsx";
 import CustomCursor from "./components/CustomCursor.jsx";
 import ProtectedRoute from "./components/ui/ProtectedRoute.jsx";
+import BackendStatus from "./components/BackendStatus.jsx";
 
 function StorefrontShell({ children }) {
   return (
@@ -139,6 +140,8 @@ export default function App() {
 
   return (
     <ReactLenis root>
+      {/* Silent backend health-check — logs to console only, no UI rendered */}
+      <BackendStatus />
       <AuthProvider>
         <AdminAuthProvider>
           <AdminDataProvider>
