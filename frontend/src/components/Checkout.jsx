@@ -103,7 +103,7 @@ export default function Checkout() {
 
       // Step 2 — Configure the Razorpay Checkout options
       const options = {
-        key: orderData.key_id,              // Public key_id from backend
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || orderData.key_id,              // Public key_id from env or backend
         amount: orderData.amount,           // Amount in paise
         currency: orderData.currency,       // "INR"
         name: "LUMÉ Cosmetics",
