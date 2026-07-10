@@ -112,7 +112,7 @@ export default function Checkout() {
     if (selectedPaymentMethod === "cod") {
       try {
         const savedOrderId = await saveOrder({
-          status: "Processing",
+          status: "Placed",
           order_status: "Placed",
           total,
           total_amount: total,
@@ -130,7 +130,7 @@ export default function Checkout() {
         });
 
         if (savedOrderId) {
-          navigate("/orders");
+          navigate(`/track-order?id=${savedOrderId}`);
         } else {
           setFormError("Failed to place Cash on Delivery order. Please try again.");
           setPlacingOrder(false);
@@ -188,8 +188,8 @@ export default function Checkout() {
 
             // Step 4 — Save the order to Supabase after verified payment
             const savedOrderId = await saveOrder({
-              status: "Processing",
-              order_status: "Processing",
+              status: "Placed",
+              order_status: "Placed",
               total,
               total_amount: total,
               shippingCost,
@@ -206,7 +206,7 @@ export default function Checkout() {
             });
 
             if (savedOrderId) {
-              navigate("/orders");
+              navigate(`/track-order?id=${savedOrderId}`);
             } else {
               setFormError("Payment was successful but order could not be saved. Contact support.");
               setPlacingOrder(false);

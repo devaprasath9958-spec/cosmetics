@@ -316,8 +316,11 @@ export function AdminDataProvider({ children }) {
 
 function getStatusText(status) {
   const map = {
-    Processing: "Dermatological formulas are being verified and boxed.",
-    "In Transit": "Parcel is with the local courier for distribution.",
+    Placed: "Your order has been placed successfully and is awaiting confirmation.",
+    Confirmed: "Order has been confirmed by the team and is being prepared.",
+    Packed: "Dermatological formulas are being verified, boxed, and packed.",
+    Shipped: "Parcel is with the courier partner and has been shipped.",
+    "Out for Delivery": "Parcel is out for delivery with the local courier.",
     Delivered: "Delivered to reception. Signature acquired.",
     Cancelled: "Order was cancelled by the customer.",
   };

@@ -5,7 +5,7 @@ import AdminTable from "./ui/AdminTable.jsx";
 import AdminBadge from "./ui/AdminBadge.jsx";
 import { adminSelectClass } from "./ui/AdminModal.jsx";
 
-const STATUSES = ["Processing", "In Transit", "Delivered", "Cancelled"];
+const STATUSES = ["Placed", "Confirmed", "Packed", "Shipped", "Out for Delivery", "Delivered", "Cancelled"];
 
 export default function AdminOrders() {
   const { orders, updateOrderStatus, deleteOrder } = useAdminData();

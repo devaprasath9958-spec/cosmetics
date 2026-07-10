@@ -1,8 +1,11 @@
 import { supabase } from '../supabaseClient';
 
 const ORDER_STATUS_TEXT = {
-  Processing: 'Dermatological formulas are being verified and boxed.',
-  'In Transit': 'Parcel is with the local courier for distribution.',
+  Placed: 'Your order has been placed successfully and is awaiting confirmation.',
+  Confirmed: 'Order has been confirmed by the team and is being prepared.',
+  Packed: 'Dermatological formulas are being verified, boxed, and packed.',
+  Shipped: 'Parcel is with the courier partner and has been shipped.',
+  'Out for Delivery': 'Parcel is out for delivery with the local courier.',
   Delivered: 'Delivered to reception. Signature acquired.',
   Cancelled: 'Order was cancelled by the customer.',
 };
@@ -27,7 +30,7 @@ const formatReviewDate = (createdAt) =>
   });
 
 const buildOrderTimeline = (status, createdAt) => {
-  const placedDate = new Date(createdAt).toLocaleString('en-US', {
+  const dateStr = new Date(createdAt).toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
     hour: 'numeric',
@@ -35,22 +38,30 @@ const buildOrderTimeline = (status, createdAt) => {
   });
 
   const steps = [
-    { label: 'Ordered', key: 'ordered' },
-    { label: 'Processing', key: 'processing' },
-    { label: 'In Transit', key: 'transit' },
-    { label: 'Delivered', key: 'delivered' },
+    { label: 'Order Placed', key: 'Placed' },
+    { label: 'Confirmed', key: 'Confirmed' },
+    { label: 'Packed', key: 'Packed' },
+    { label: 'Shipped', key: 'Shipped' },
+    { label: 'Out for Delivery', key: 'Out for Delivery' },
+    { label: 'Delivered', key: 'Delivered' },
   ];
 
-  const statusIndex =
-    status === 'Processing' ? 1 :
-    status === 'In Transit' ? 2 :
-    status === 'Delivered' ? 3 :
-    status === 'Cancelled' ? 0 : 1;
+  const statusMap = {
+    Placed: 0,
+    Confirmed: 1,
+    Packed: 2,
+    Shipped: 3,
+    'Out for Delivery': 4,
+    Delivered: 5,
+    Cancelled: -1,
+  };
+
+  const statusIndex = statusMap[status] !== undefined ? statusMap[status] : 0;
 
   return steps.map((step, idx) => ({
     label: step.label,
-    date: idx === 0 ? placedDate : idx <= statusIndex ? placedDate : idx === statusIndex + 1 ? 'Pending' : 'Est. soon',
-    completed: idx <= statusIndex,
+    date: idx === 0 ? dateStr : idx <= statusIndex ? 'Completed' : 'Pending',
+    completed: idx <= statusIndex && status !== 'Cancelled',
     current: idx === statusIndex && status !== 'Delivered' && status !== 'Cancelled',
   }));
 };
@@ -521,38 +532,47 @@ export const saveOrder = async (orderData) => {
   if (!user) return null;
 
   try {
-    const orderId = `LM-${Math.floor(1000 + Math.random() * 9000)}`;
-
     const payload = {
-      id: orderId,
       user_id: user.id,
-      status: orderData.status || orderData.order_status || 'Processing',
+      status: orderData.status || 'Placed',
       total: orderData.total || orderData.total_amount,
       payment_method: orderData.paymentMethod || orderData.payment_method,
       shipping_address: orderData.shippingAddress || orderData.delivery_address,
-      payment_status: orderData.payment_status,
-      order_status: orderData.order_status,
-      razorpay_order_id: orderData.razorpay_order_id,
-      razorpay_payment_id: orderData.razorpay_payment_id,
+      payment_status: orderData.payment_status || 'Pending',
+      razorpay_order_id: orderData.razorpay_order_id || null,
+      razorpay_payment_id: orderData.razorpay_payment_id || null,
     };
 
-    let { error: orderError } = await supabase.from('orders').insert(payload);
+    let { data: insertedOrder, error: orderError } = await supabase
+      .from('orders')
+      .insert(payload)
+      .select('id')
+      .maybeSingle();
 
-    if (orderError && (orderError.code === 'PGRST204' || (orderError.message && orderError.message.includes('column')))) {
-      console.warn('[saveOrder] Custom columns missing in database schema, falling back to standard schema...');
+    if (orderError) {
+      console.warn('[saveOrder] Custom columns missing in database schema, falling back to standard schema...', orderError);
       const fallbackPayload = {
-        id: orderId,
         user_id: user.id,
-        status: orderData.status || 'Processing',
+        status: orderData.status || 'Placed',
         total: orderData.total || orderData.total_amount,
         payment_method: orderData.paymentMethod || orderData.payment_method,
         shipping_address: orderData.shippingAddress || orderData.delivery_address,
       };
-      const retryResult = await supabase.from('orders').insert(fallbackPayload);
-      orderError = retryResult.error;
+      const { data: retryData, error: retryError } = await supabase
+        .from('orders')
+        .insert(fallbackPayload)
+        .select('id')
+        .maybeSingle();
+      
+      orderError = retryError;
+      if (retryData) {
+        insertedOrder = retryData;
+      }
     }
 
     if (orderError) throw orderError;
+    const orderId = insertedOrder?.id;
+    if (!orderId) throw new Error('Failed to retrieve inserted order ID');
 
     const { data: cartItems, error: cartError } = await supabase
       .from('cart_items')
@@ -598,6 +618,23 @@ export const fetchOrders = async () => {
   } catch (e) {
     console.error(e);
     return [];
+  }
+};
+
+export const fetchOrderById = async (id) => {
+  try {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*, order_items(*, products(*))')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return null;
+    return mapOrderRow(data);
+  } catch (e) {
+    console.error('[fetchOrderById] Error:', e);
+    return null;
   }
 };
 
