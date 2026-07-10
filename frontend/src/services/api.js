@@ -84,6 +84,11 @@ export const mapOrderRow = (row) => {
   const items = (row.order_items || []).map(mapOrderItem);
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
 
+  // Latest payment record joined from payments table (if available)
+  const latestPayment = Array.isArray(row.payments) && row.payments.length > 0
+    ? row.payments[0]
+    : null;
+
   return {
     id: row.id,
     date: formatOrderDate(row.created_at),
@@ -93,10 +98,12 @@ export const mapOrderRow = (row) => {
     shippingCost: 0,
     taxCost: 0,
     subtotal,
-    paymentMethod: row.payment_method || 'Card',
-    paymentStatus: row.payment_status || 'Pending',
-    razorpayOrderId: row.razorpay_order_id || null,
-    razorpayPaymentId: row.razorpay_payment_id || null,
+    // Prefer payment_method from the order row (set at checkout), fall back to payments table
+    paymentMethod: row.payment_method || latestPayment?.payment_method || 'Card',
+    // Prefer payment_status from payments table (most accurate)
+    paymentStatus: latestPayment?.payment_status || row.payment_status || 'Pending',
+    razorpayOrderId: latestPayment?.razorpay_order_id || row.razorpay_order_id || null,
+    razorpayPaymentId: latestPayment?.razorpay_payment_id || row.razorpay_payment_id || null,
     shippingAddress: row.shipping_address || '',
     carrier: 'Standard Shipping',
     trackingNumber: `REF-${row.id}`,
@@ -148,7 +155,8 @@ export const clearProductsCache = () => {
 };
 
 // Set up realtime subscription for products
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && !window.__productsChannelSetup) {
+  window.__productsChannelSetup = true;
   supabase
     .channel('public:products')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) => {
@@ -541,9 +549,6 @@ export const saveOrder = async (orderData) => {
       total: orderData.total || orderData.total_amount,
       payment_method: orderData.paymentMethod || orderData.payment_method,
       shipping_address: orderData.shippingAddress || orderData.delivery_address,
-      payment_status: orderData.payment_status || 'Pending',
-      razorpay_order_id: orderData.razorpay_order_id || null,
-      razorpay_payment_id: orderData.razorpay_payment_id || null,
     };
 
     let { data: insertedOrder, error: orderError } = await supabase
@@ -551,27 +556,6 @@ export const saveOrder = async (orderData) => {
       .insert(payload)
       .select('id')
       .maybeSingle();
-
-    if (orderError) {
-      console.warn('[saveOrder] Custom columns missing in database schema, falling back to standard schema...', orderError);
-      const fallbackPayload = {
-        user_id: user.id,
-        status: orderData.status || 'Placed',
-        total: orderData.total || orderData.total_amount,
-        payment_method: orderData.paymentMethod || orderData.payment_method,
-        shipping_address: orderData.shippingAddress || orderData.delivery_address,
-      };
-      const { data: retryData, error: retryError } = await supabase
-        .from('orders')
-        .insert(fallbackPayload)
-        .select('id')
-        .maybeSingle();
-      
-      orderError = retryError;
-      if (retryData) {
-        insertedOrder = retryData;
-      }
-    }
 
     if (orderError) throw orderError;
     const orderId = insertedOrder?.id;
@@ -612,7 +596,7 @@ export const fetchOrders = async () => {
   try {
     const { data, error } = await supabase
       .from('orders')
-      .select('*, order_items(*, products(*))')
+      .select('*, order_items(*, products(*)), payments(payment_status, payment_method, razorpay_order_id, razorpay_payment_id, transaction_date)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
@@ -628,7 +612,7 @@ export const fetchOrderById = async (id) => {
   try {
     const { data, error } = await supabase
       .from('orders')
-      .select('*, order_items(*, products(*))')
+      .select('*, order_items(*, products(*)), payments(payment_status, payment_method, razorpay_order_id, razorpay_payment_id, transaction_date)')
       .eq('id', id)
       .maybeSingle();
 
@@ -645,7 +629,7 @@ export const fetchAllOrders = async () => {
   try {
     const { data, error } = await supabase
       .from('orders')
-      .select('*, order_items(*, products(*))')
+      .select('*, order_items(*, products(*)), payments(payment_status, payment_method, razorpay_order_id, razorpay_payment_id, transaction_date)')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -699,12 +683,21 @@ export const fetchUserPayments = async () => {
 
 export const fetchAllPayments = async () => {
   try {
+    // Try with profile join first
     const { data, error } = await supabase
       .from('payments')
-      .select('*, profiles!user_id(first_name, last_name, email)')
+      .select('*, profiles(first_name, last_name, email)')
       .order('transaction_date', { ascending: false });
-    if (error) throw error;
-    return data || [];
+    if (!error) return data || [];
+
+    // Fallback: simple select without join
+    console.warn('[fetchAllPayments] Profile join failed, falling back:', error.message);
+    const { data: fallback, error: fallbackErr } = await supabase
+      .from('payments')
+      .select('*')
+      .order('transaction_date', { ascending: false });
+    if (fallbackErr) throw fallbackErr;
+    return fallback || [];
   } catch (e) {
     console.error(e);
     return [];

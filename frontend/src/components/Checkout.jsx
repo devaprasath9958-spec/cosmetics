@@ -3,7 +3,7 @@ import { CreditCard, Truck, ShieldCheck, MapPin, Lock, Landmark, Smartphone, Wal
 import { useNavigate } from "react-router-dom";
 import { fetchCart, saveOrder, getAuthenticatedUser } from "../services/api";
 import { supabase } from "../supabaseClient";
-import { createPaymentOrder, verifyPayment } from "../services/backendApi";
+import { createPaymentOrder, verifyPayment, recordPayment, recordCodPayment } from "../services/backendApi";
 
 const PAYMENT_METHODS = [
   { id: "razorpay", label: "Razorpay", description: "Cards, UPI, Net Banking, Wallets, EMI, etc.", icon: ShieldCheck, recommended: true },
@@ -130,6 +130,17 @@ export default function Checkout() {
         });
 
         if (savedOrderId) {
+          // Record COD payment via backend (bypasses RLS)
+          try {
+            await recordCodPayment({
+              supabase_order_id: savedOrderId,
+              user_id: user?.id,
+              amount: total,
+              currency: "INR",
+            });
+          } catch (payErr) {
+            console.warn("[Checkout] COD payment record warning:", payErr);
+          }
           navigate(`/track-order?id=${savedOrderId}`);
         } else {
           setFormError("Failed to place Cash on Delivery order. Please try again.");
@@ -200,12 +211,28 @@ export default function Checkout() {
               payment_status: "Success",
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
               shippingAddress,
               delivery_address: shippingAddress,
               carrier: formData.deliveryMethod === "Express" ? "FedEx" : "USPS",
             });
 
             if (savedOrderId) {
+              // Record payment via backend (bypasses RLS)
+              try {
+                await recordPayment({
+                  supabase_order_id: savedOrderId,
+                  user_id: user?.id,
+                  amount: total,
+                  currency: "INR",
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  payment_method: `Razorpay — ${selectedPaymentMethod}`,
+                });
+              } catch (payErr) {
+                console.warn("[Checkout] Payment record warning:", payErr);
+              }
               navigate(`/track-order?id=${savedOrderId}`);
             } else {
               setFormError("Payment was successful but order could not be saved. Contact support.");

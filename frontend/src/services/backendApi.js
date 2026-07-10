@@ -81,3 +81,31 @@ export const verifyPayment = (payload) =>
     body: JSON.stringify(payload),
   });
 
+/**
+ * POST /api/payment/record
+ *
+ * Records a payment in the payments table via the backend.
+ * Uses the service role key to bypass RLS.
+ *
+ * @param {{ supabase_order_id, user_id, amount, currency, razorpay_order_id, razorpay_payment_id, razorpay_signature, payment_method }} payload
+ * @returns {{ success, message }}
+ */
+export const recordPayment = (payload) =>
+  apiFetch("/api/payment/record", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+/**
+ * POST /api/payment/cod
+ *
+ * Records a Cash on Delivery payment in the payments table.
+ *
+ * @param {{ supabase_order_id, user_id, amount, currency }} payload
+ * @returns {{ success, message }}
+ */
+export const recordCodPayment = (payload) =>
+  apiFetch("/api/payment/cod", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
