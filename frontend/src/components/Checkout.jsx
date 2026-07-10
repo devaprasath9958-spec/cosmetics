@@ -1,9 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { CreditCard, Truck, ShieldCheck, MapPin, Lock } from "lucide-react";
+import { CreditCard, Truck, ShieldCheck, MapPin, Lock, Landmark, Smartphone, Wallet, DollarSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { fetchCart, saveOrder, getAuthenticatedUser } from "../services/api";
 import { supabase } from "../supabaseClient";
 import { createPaymentOrder, verifyPayment } from "../services/backendApi";
+
+const PAYMENT_METHODS = [
+  { id: "razorpay", label: "Razorpay", description: "Cards, UPI, Net Banking, Wallets, EMI, etc.", icon: ShieldCheck, recommended: true },
+  { id: "upi", label: "UPI", description: "Google Pay, PhonePe, Paytm, or any UPI app.", icon: Smartphone },
+  { id: "credit_card", label: "Credit Card", description: "Visa, Mastercard, RuPay, Amex credit cards.", icon: CreditCard },
+  { id: "debit_card", label: "Debit Card", description: "Standard Debit cards accepted.", icon: CreditCard },
+  { id: "netbanking", label: "Net Banking", description: "Direct pay via major Indian banks.", icon: Landmark },
+  { id: "wallet", label: "Wallets", description: "Pay via Paytm, Amazon Pay, PhonePe, etc.", icon: Wallet },
+  { id: "emi", label: "EMI", description: "Easy monthly installments (where supported).", icon: CreditCard },
+  { id: "cod", label: "Cash on Delivery (COD)", description: "Pay in cash upon delivery.", icon: DollarSign }
+];
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -12,6 +23,7 @@ export default function Checkout() {
   const [placingOrder, setPlacingOrder] = useState(false);
   const [formError, setFormError] = useState("");
   const [user, setUser] = useState(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -82,16 +94,58 @@ export default function Checkout() {
     return true;
   };
 
-  // ── Open Razorpay Checkout modal ─────────────────────────────
-  const handlePayNow = async () => {
+  // ── Open Razorpay Checkout or Place COD Order ───────────────────
+  const handlePlaceOrder = async () => {
     if (!validateShipping()) return;
+    if (!selectedPaymentMethod) {
+      setFormError("Please select a payment method.");
+      return;
+    }
 
     setFormError("");
     setPlacingOrder(true);
 
+    const { firstName, lastName, address, city, zipCode } = formData;
+    const shippingAddress = `${firstName.trim()} ${lastName.trim()}, ${address.trim()}, ${city.trim()} ${zipCode.trim()}`;
+
+    // Handle Cash on Delivery (COD) Flow
+    if (selectedPaymentMethod === "cod") {
+      try {
+        const savedOrderId = await saveOrder({
+          status: "Processing",
+          order_status: "Placed",
+          total,
+          total_amount: total,
+          shippingCost,
+          taxCost: 0,
+          subtotal,
+          paymentMethod: "Cash on Delivery",
+          payment_method: "Cash on Delivery",
+          payment_status: "Pending",
+          razorpay_order_id: null,
+          razorpay_payment_id: null,
+          shippingAddress,
+          delivery_address: shippingAddress,
+          carrier: formData.deliveryMethod === "Express" ? "FedEx" : "USPS",
+        });
+
+        if (savedOrderId) {
+          navigate("/orders");
+        } else {
+          setFormError("Failed to place Cash on Delivery order. Please try again.");
+          setPlacingOrder(false);
+        }
+      } catch (err) {
+        console.error("[Checkout] COD order error:", err);
+        setFormError("An error occurred. Please try again.");
+        setPlacingOrder(false);
+      }
+      return;
+    }
+
+    // Razorpay flow for online methods
     try {
       // Step 1 — Ask the backend to create a Razorpay order
-      // Amount must be in paise (multiply USD/INR amount × 100)
       const amountInPaise = Math.round(total * 100);
       const orderData = await createPaymentOrder(amountInPaise, "INR");
 
@@ -101,14 +155,20 @@ export default function Checkout() {
         return;
       }
 
+      // Determine preferred method configuration
+      let preferredMethod = selectedPaymentMethod;
+      if (preferredMethod === "credit_card" || preferredMethod === "debit_card") {
+        preferredMethod = "card";
+      }
+
       // Step 2 — Configure the Razorpay Checkout options
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || orderData.key_id,              // Public key_id from env or backend
-        amount: orderData.amount,           // Amount in paise
-        currency: orderData.currency,       // "INR"
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || orderData.key_id,
+        amount: orderData.amount,
+        currency: orderData.currency,
         name: "LUMÉ Cosmetics",
         description: `Order — ${cart.length} item${cart.length > 1 ? "s" : ""}`,
-        order_id: orderData.order_id,       // Razorpay Order ID
+        order_id: orderData.order_id,
 
         // ── Payment success handler ──────────────────────────
         handler: async (response) => {
@@ -127,15 +187,21 @@ export default function Checkout() {
             }
 
             // Step 4 — Save the order to Supabase after verified payment
-            const { firstName, lastName, address, city, zipCode } = formData;
             const savedOrderId = await saveOrder({
               status: "Processing",
+              order_status: "Processing",
               total,
+              total_amount: total,
               shippingCost,
               taxCost: 0,
               subtotal,
-              paymentMethod: `Razorpay — ${verification.payment_id}`,
-              shippingAddress: `${firstName.trim()} ${lastName.trim()}, ${address.trim()}, ${city.trim()} ${zipCode.trim()}`,
+              paymentMethod: `Razorpay — ${selectedPaymentMethod} — ${verification.payment_id}`,
+              payment_method: `Razorpay — ${selectedPaymentMethod} — ${verification.payment_id}`,
+              payment_status: "Success",
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              shippingAddress,
+              delivery_address: shippingAddress,
               carrier: formData.deliveryMethod === "Express" ? "FedEx" : "USPS",
             });
 
@@ -152,27 +218,23 @@ export default function Checkout() {
           }
         },
 
-        // ── Pre-fill customer details ────────────────────────
+        // ── Pre-fill customer details and set method if not generic "razorpay" ──
         prefill: {
           name: `${formData.firstName} ${formData.lastName}`.trim(),
           email: user?.email || "",
+          method: preferredMethod !== "razorpay" ? preferredMethod : undefined,
         },
 
-        // ── Razorpay modal theme ─────────────────────────────
-        theme: { color: "#C9A769" }, // Gold — matches brand palette
+        theme: { color: "#C9A769" },
 
-        // ── Payment failure / modal close handler ────────────
         modal: {
           ondismiss: () => {
-            // User closed the modal without paying — reset button
             setPlacingOrder(false);
             setFormError("Payment was cancelled. You can try again.");
           },
         },
       };
 
-      // Step 5 — Open the Razorpay modal
-      // window.Razorpay is available because we loaded the SDK in index.html
       if (typeof window.Razorpay === "undefined") {
         setFormError("Razorpay SDK failed to load. Please refresh and try again.");
         setPlacingOrder(false);
@@ -181,7 +243,6 @@ export default function Checkout() {
 
       const rzp = new window.Razorpay(options);
 
-      // Handle payment failure inside the modal (network errors, bank declines)
       rzp.on("payment.failed", (response) => {
         console.error("[Checkout] Payment failed:", response.error);
         setFormError(
@@ -192,7 +253,7 @@ export default function Checkout() {
 
       rzp.open();
     } catch (err) {
-      console.error("[Checkout] handlePayNow error:", err);
+      console.error("[Checkout] handlePlaceOrder error:", err);
       setFormError("Could not connect to the payment server. Please try again.");
       setPlacingOrder(false);
     }
@@ -304,26 +365,52 @@ export default function Checkout() {
             </div>
           </section>
 
-          {/* Payment Method Info */}
+          {/* Select Payment Method */}
           <section className="bg-obsidian-light p-6 rounded-xl border border-obsidian-border shadow-card">
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-6">
               <CreditCard className="text-gold w-6 h-6" />
-              <h2 className="font-display text-2xl text-ivory">Payment</h2>
+              <h2 className="font-display text-2xl text-ivory">Select Payment Method</h2>
             </div>
-            <p className="text-smoke text-sm leading-relaxed">
-              You will be redirected to Razorpay's secure payment gateway to complete
-              your purchase. Accepted: Credit/Debit Cards, UPI, Net Banking, Wallets.
-            </p>
-            {/* Razorpay accepted methods badge row */}
-            <div className="flex flex-wrap gap-2 mt-4">
-              {["Visa", "Mastercard", "UPI", "Net Banking", "Wallets"].map((method) => (
-                <span
-                  key={method}
-                  className="text-xs px-3 py-1 border border-obsidian-border rounded-full text-smoke"
-                >
-                  {method}
-                </span>
-              ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {PAYMENT_METHODS.map((method) => {
+                const Icon = method.icon;
+                return (
+                  <label
+                    key={method.id}
+                    className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-all ${
+                      selectedPaymentMethod === method.id
+                        ? "border-gold bg-gold/5 shadow-glow"
+                        : "border-obsidian-border hover:border-gold/50 bg-obsidian-soft/50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="payment_method"
+                      value={method.id}
+                      checked={selectedPaymentMethod === method.id}
+                      onChange={() => {
+                        setSelectedPaymentMethod(method.id);
+                        setFormError("");
+                      }}
+                      className="accent-gold mt-1"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4 text-gold shrink-0" />
+                        <span className="font-medium text-ivory text-sm">{method.label}</span>
+                        {method.recommended && (
+                          <span className="text-[9px] font-bold text-obsidian bg-gold rounded px-1.5 py-0.5 uppercase tracking-wide">
+                            Recommended
+                          </span>
+                        )}
+                      </div>
+                      <span className="block text-[11px] text-smoke mt-1 leading-normal">
+                        {method.description}
+                      </span>
+                    </div>
+                  </label>
+                );
+              })}
             </div>
           </section>
         </div>
@@ -372,19 +459,19 @@ export default function Checkout() {
               </div>
             )}
 
-            {/* Pay Now button — triggers Razorpay modal */}
+            {/* Submit button */}
             <button
               id="razorpay-pay-btn"
-              onClick={handlePayNow}
+              onClick={handlePlaceOrder}
               disabled={placingOrder}
               className="w-full bg-gold hover:bg-gold-light text-obsidian font-semibold py-4 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               <ShieldCheck className="w-5 h-5" />
-              {placingOrder ? "Processing..." : "Pay Now"}
+              {placingOrder ? "Processing..." : selectedPaymentMethod === "cod" ? "Place Order (COD)" : "Pay Now"}
             </button>
 
             <p className="text-xs text-smoke text-center mt-4 flex items-center justify-center gap-1">
-              <Lock className="w-3 h-3" /> Secured by Razorpay
+              <Lock className="w-3 h-3" /> Secure Checkout
             </p>
           </div>
         </div>

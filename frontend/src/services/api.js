@@ -523,14 +523,34 @@ export const saveOrder = async (orderData) => {
   try {
     const orderId = `LM-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    const { error: orderError } = await supabase.from('orders').insert({
+    const payload = {
       id: orderId,
       user_id: user.id,
-      status: orderData.status,
-      total: orderData.total,
-      payment_method: orderData.paymentMethod,
-      shipping_address: orderData.shippingAddress,
-    });
+      status: orderData.status || orderData.order_status || 'Processing',
+      total: orderData.total || orderData.total_amount,
+      payment_method: orderData.paymentMethod || orderData.payment_method,
+      shipping_address: orderData.shippingAddress || orderData.delivery_address,
+      payment_status: orderData.payment_status,
+      order_status: orderData.order_status,
+      razorpay_order_id: orderData.razorpay_order_id,
+      razorpay_payment_id: orderData.razorpay_payment_id,
+    };
+
+    let { error: orderError } = await supabase.from('orders').insert(payload);
+
+    if (orderError && (orderError.code === 'PGRST204' || (orderError.message && orderError.message.includes('column')))) {
+      console.warn('[saveOrder] Custom columns missing in database schema, falling back to standard schema...');
+      const fallbackPayload = {
+        id: orderId,
+        user_id: user.id,
+        status: orderData.status || 'Processing',
+        total: orderData.total || orderData.total_amount,
+        payment_method: orderData.paymentMethod || orderData.payment_method,
+        shipping_address: orderData.shippingAddress || orderData.delivery_address,
+      };
+      const retryResult = await supabase.from('orders').insert(fallbackPayload);
+      orderError = retryResult.error;
+    }
 
     if (orderError) throw orderError;
 
