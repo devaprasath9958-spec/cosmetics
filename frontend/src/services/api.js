@@ -548,6 +548,9 @@ export const saveOrder = async (orderData) => {
       status: orderData.status || 'Placed',
       total: orderData.total || orderData.total_amount,
       payment_method: orderData.paymentMethod || orderData.payment_method,
+      payment_status: orderData.payment_status || 'Pending',
+      razorpay_order_id: orderData.razorpay_order_id || null,
+      razorpay_payment_id: orderData.razorpay_payment_id || null,
       shipping_address: orderData.shippingAddress || orderData.delivery_address,
     };
 
@@ -557,7 +560,13 @@ export const saveOrder = async (orderData) => {
       .select('id')
       .maybeSingle();
 
-    if (orderError) throw orderError;
+    if (orderError) {
+      console.error('--- SUPABASE INSERT ERROR ---');
+      console.error('Table: orders');
+      console.error('Payload:', JSON.stringify(payload, null, 2));
+      console.error('Error:', orderError);
+      throw orderError;
+    }
     const orderId = insertedOrder?.id;
     if (!orderId) throw new Error('Failed to retrieve inserted order ID');
 
@@ -577,7 +586,13 @@ export const saveOrder = async (orderData) => {
       }));
 
       const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        console.error('--- SUPABASE INSERT ERROR ---');
+        console.error('Table: order_items');
+        console.error('Payload:', JSON.stringify(orderItems, null, 2));
+        console.error('Error:', itemsError);
+        throw itemsError;
+      }
     }
 
     await clearCart();
