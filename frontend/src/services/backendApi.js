@@ -43,3 +43,41 @@ const apiFetch = async (path, options = {}) => {
  *   { status: "ok", message: "...", timestamp: "..." }
  */
 export const getBackendStatus = () => apiFetch("/api/test");
+
+// ─────────────────────────────────────────────────────────────
+// Razorpay Payment Services
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * POST /api/payment/create-order
+ *
+ * Creates a Razorpay order on the backend and returns all the
+ * details the frontend needs to open the Checkout modal.
+ *
+ * @param {number} amount   - Amount in smallest currency unit (paise for INR)
+ *                            e.g. ₹500 → pass 50000
+ * @param {string} currency - Currency code, defaults to "INR"
+ * @returns {{ success, order_id, amount, currency, key_id }}
+ */
+export const createPaymentOrder = (amount, currency = "INR") =>
+  apiFetch("/api/payment/create-order", {
+    method: "POST",
+    body: JSON.stringify({ amount, currency }),
+  });
+
+/**
+ * POST /api/payment/verify
+ *
+ * Sends the three Razorpay response fields to the backend for
+ * HMAC-SHA256 signature verification. Only call this inside the
+ * Razorpay `handler` callback (after successful payment).
+ *
+ * @param {{ razorpay_order_id, razorpay_payment_id, razorpay_signature }} payload
+ * @returns {{ success, payment_id, order_id, message }}
+ */
+export const verifyPayment = (payload) =>
+  apiFetch("/api/payment/verify", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
