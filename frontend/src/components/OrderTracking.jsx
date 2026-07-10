@@ -295,11 +295,19 @@ export default function OrderTracking() {
                 <div className="flex justify-between">
                   <span className="text-smoke">Status:</span>
                   <span className={`font-semibold ${
+                    order.paymentStatus === 'Success' ? 'text-green-400' : 
+                    order.paymentStatus === 'Failed' ? 'text-rose' : 
                     order.status === "Cancelled" ? "text-smoke" : "text-gold"
                   }`}>
-                    {order.status === "Cancelled" ? "Voided" : "Paid"}
+                    {order.paymentStatus || (order.status === "Cancelled" ? "Voided" : "Paid")}
                   </span>
                 </div>
+                {order.razorpayPaymentId && (
+                  <div className="flex justify-between text-xs mt-2">
+                    <span className="text-smoke">Pay ID:</span>
+                    <span className="text-ivory">{order.razorpayPaymentId}</span>
+                  </div>
+                )}
                 <div className="flex justify-between border-t border-obsidian-border/50 pt-3 text-base">
                   <span className="text-ivory font-semibold">Total Amount:</span>
                   <span className="text-gold font-display font-bold">${order.total?.toFixed(2)}</span>

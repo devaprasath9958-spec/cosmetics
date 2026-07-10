@@ -319,7 +319,11 @@ export default function Orders() {
                             <div className="space-y-1">
                               <span className="text-smoke flex items-center gap-1"><CreditCard size={11} className="text-gold/60" /> Payment Info</span>
                               <p className="text-ivory mt-1">{order.paymentMethod}</p>
-                              <p className="text-[10px] text-smoke">Courier: {order.carrier}</p>
+                              <p className="text-[10px] text-smoke">Status: <span className={order.paymentStatus === 'Success' ? 'text-green-400' : order.paymentStatus === 'Failed' ? 'text-rose' : 'text-gold'}>{order.paymentStatus}</span></p>
+                              {order.razorpayPaymentId && (
+                                <p className="text-[10px] text-smoke leading-none mt-1">Pay ID: {order.razorpayPaymentId}</p>
+                              )}
+                              <p className="text-[10px] text-smoke mt-1">Courier: {order.carrier}</p>
                               <p className="text-[10px] text-smoke leading-none mt-1">Ref: {order.trackingNumber}</p>
                             </div>
                           </div>

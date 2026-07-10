@@ -40,6 +40,7 @@ import ProtectedAdminRoute from "./components/admin/ProtectedAdminRoute.jsx";
 import AdminDashboard from "./components/admin/AdminDashboard.jsx";
 import AdminProducts from "./components/admin/AdminProducts.jsx";
 import AdminOrders from "./components/admin/AdminOrders.jsx";
+import AdminPayments from "./components/admin/AdminPayments.jsx";
 import AdminCustomers from "./components/admin/AdminCustomers.jsx";
 import AdminReviews from "./components/admin/AdminReviews.jsx";
 import AdminCategories from "./components/admin/AdminCategories.jsx";
@@ -52,6 +53,7 @@ import AdminMessages from "./components/admin/AdminMessages.jsx";
 import CustomCursor from "./components/CustomCursor.jsx";
 import ProtectedRoute from "./components/ui/ProtectedRoute.jsx";
 import BackendStatus from "./components/BackendStatus.jsx";
+import PaymentHistory from "./components/PaymentHistory.jsx";
 
 function StorefrontShell({ children }) {
   return (
@@ -85,6 +87,7 @@ function AppRoutes() {
           <Route index element={<AdminDashboard />} />
           <Route path="products" element={<AdminProducts />} />
           <Route path="orders" element={<AdminOrders />} />
+          <Route path="payments" element={<AdminPayments />} />
           <Route path="customers" element={<AdminCustomers />} />
           <Route path="reviews" element={<AdminReviews />} />
           <Route path="categories" element={<AdminCategories />} />
@@ -126,6 +129,7 @@ function AppRoutes() {
         <Route path="/register" element={<StorefrontShell><Signup /></StorefrontShell>} />
         <Route path="/checkout" element={<StorefrontShell><ProtectedRoute><Checkout /></ProtectedRoute></StorefrontShell>} />
         <Route path="/track-order" element={<StorefrontShell><OrderTracking /></StorefrontShell>} />
+        <Route path="/payment-history" element={<StorefrontShell><ProtectedRoute><PaymentHistory /></ProtectedRoute></StorefrontShell>} />
         <Route path="/faq" element={<StorefrontShell><FAQ /></StorefrontShell>} />
         <Route path="/blog" element={<StorefrontShell><Blog /></StorefrontShell>} />
         <Route path="/blog/:id" element={<StorefrontShell><Blog /></StorefrontShell>} />

@@ -94,6 +94,9 @@ export const mapOrderRow = (row) => {
     taxCost: 0,
     subtotal,
     paymentMethod: row.payment_method || 'Card',
+    paymentStatus: row.payment_status || 'Pending',
+    razorpayOrderId: row.razorpay_order_id || null,
+    razorpayPaymentId: row.razorpay_payment_id || null,
     shippingAddress: row.shipping_address || '',
     carrier: 'Standard Shipping',
     trackingNumber: `REF-${row.id}`,
@@ -673,5 +676,37 @@ export const submitContact = async (formData) => {
   } catch (e) {
     console.error(e);
     return { success: false, error: e.message };
+  }
+};
+
+// --- Payments ---
+export const fetchUserPayments = async () => {
+  try {
+    const user = await getAuthenticatedUser();
+    if (!user) return [];
+    const { data, error } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('transaction_date', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  } catch (e) {
+    console.error(e);
+    return [];
+  }
+};
+
+export const fetchAllPayments = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('payments')
+      .select('*, profiles!user_id(first_name, last_name, email)')
+      .order('transaction_date', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  } catch (e) {
+    console.error(e);
+    return [];
   }
 };

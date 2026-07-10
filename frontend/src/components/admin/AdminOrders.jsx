@@ -34,6 +34,16 @@ export default function AdminOrders() {
       render: (row) => <span className="font-medium text-gold">${row.total?.toFixed(2)}</span>,
     },
     {
+      key: "payment",
+      label: "Payment",
+      render: (row) => (
+        <div>
+          <p className="text-xs text-ivory">{row.paymentMethod}</p>
+          <AdminBadge label={row.paymentStatus || 'Pending'} />
+        </div>
+      ),
+    },
+    {
       key: "status",
       label: "Status",
       render: (row) => (

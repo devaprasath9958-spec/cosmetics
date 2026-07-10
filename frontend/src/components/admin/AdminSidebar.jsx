@@ -14,6 +14,8 @@ import {
   Award,
   Percent,
   BookOpen,
+  CreditCard,
+
   Mail,
   MessageSquare,
   Layers,
@@ -30,6 +32,7 @@ const navItems = [
   { to: "/admin/offers", label: "Offers", icon: Percent },
   { to: "/admin/collections", label: "Collections", icon: Layers },
   { to: "/admin/orders", label: "Orders", icon: ShoppingBag },
+  { to: "/admin/payments", label: "Payments", icon: CreditCard },
   { to: "/admin/customers", label: "Customers", icon: Users },
   { to: "/admin/reviews", label: "Reviews", icon: Star },
   { to: "/admin/blog", label: "Blog", icon: BookOpen },
