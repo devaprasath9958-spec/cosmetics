@@ -54,7 +54,6 @@ export default function Profile() {
           name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Customer",
           email: user.email,
           avatar_url: user.user_metadata?.avatar_url || "/avatars/anime1.png",
-          joined_date: new Date().toISOString(),
           membership: "Bronze Tier"
         };
         
@@ -238,7 +237,7 @@ export default function Profile() {
               Welcome, {userInfo?.name}
             </h1>
             <p className="text-xs text-smoke mt-1 leading-relaxed">
-              Member since {new Date(userInfo?.joined_date).toLocaleDateString()} &bull; <strong className="text-gold font-medium">{userInfo?.membership}</strong>
+              Member since {new Date(userInfo?.created_at || Date.now()).toLocaleDateString()} &bull; <strong className="text-gold font-medium">{userInfo?.membership}</strong>
             </p>
             
             {/* Completion Bar */}
